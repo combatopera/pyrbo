@@ -56,6 +56,8 @@ def getpackagedot(f):
     del p[-2]
     return '.'.join(p)
 
+class NoSuchVariableException(Exception): pass
+
 class Turbo:
 
     def __init__(self, nametotype):
@@ -72,7 +74,7 @@ class Turbo:
         varnames = set(f.func_code.co_varnames)
         for name in self.nametotypeinfo:
             if name not in varnames:
-                raise Exception('No such variable: ' + name)
+                raise NoSuchVariableException(name)
         params = []
         cdefs = []
         for i, name in enumerate(f.func_code.co_varnames):
