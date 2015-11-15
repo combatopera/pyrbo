@@ -78,29 +78,27 @@ class Turbo:
         params = []
         cdefs = []
         for i, name in enumerate(f.func_code.co_varnames):
-            t = self.nametotypeinfo[name]
-            expr = name
-            param = i < f.func_code.co_argcount
-            if param:
-                params.append(t.param(name))
-            cdefs.extend(t.itercdefs(name, param))
+            typeinfo = self.nametotypeinfo[name]
+            isparam = i < f.func_code.co_argcount
+            if isparam:
+                params.append(typeinfo.param(name))
+            cdefs.extend(typeinfo.itercdefs(name, isparam))
         functionname = f.__name__
         bodyindent, body = getbody(f)
         text = template % dict(name = functionname,
             params = ', '.join(params),
             code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body)
-        packagedot = getpackagedot(f)
-        fqmodulename = packagedot + 'turbo_' + functionname
+        fqmodulename = getpackagedot(f) + 'turbo_' + functionname
         path = fqmodulename.replace('.', os.sep) + '.pyx'
         if os.path.exists(path):
             f = open(path)
             try:
-                oldtext = f.read()
+                existingtext = f.read()
             finally:
                 f.close()
         else:
-            oldtext = None
-        if text != oldtext:
+            existingtext = None
+        if text != existingtext:
             g = open(path, 'w')
             try:
                 g.write(text)
