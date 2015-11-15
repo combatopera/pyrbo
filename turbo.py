@@ -51,6 +51,11 @@ class Scalar:
         if not isparam:
             yield "cdef np.%s_t %s" % (self.typename, name)
 
+def getpackagedot(f):
+    p = (f.__module__ + '.').split('.')
+    del p[-2]
+    return '.'.join(p)
+
 class Turbo:
 
     def __init__(self, nametotype):
@@ -82,8 +87,9 @@ class Turbo:
         text = template % dict(name = functionname,
             params = ', '.join(params),
             code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body)
-        modulename = "turbo_" + functionname
-        path = modulename + '.pyx'
+        packagedot = getpackagedot(f)
+        fqmodulename = packagedot + 'turbo_' + functionname
+        path = fqmodulename.replace('.', os.sep) + '.pyx'
         if os.path.exists(path):
             f = open(path)
             try:
@@ -99,8 +105,8 @@ class Turbo:
                 g.flush()
             finally:
                 g.close()
-        importlib.import_module(modulename)
-        return getattr(sys.modules[modulename], functionname)
+        importlib.import_module(fqmodulename)
+        return getattr(sys.modules[fqmodulename], functionname)
 
 def turbo(**nametotype):
     return Turbo(nametotype)
