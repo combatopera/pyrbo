@@ -112,7 +112,7 @@ class Turbo:
                 params = ', '.join(params),
                 code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body)
         fqmodulename = getpackagedot(f) + 'turbo_' + functionname
-        path = fqmodulename.replace('.', os.sep) + '.pyx' # FIXME: Should use __file__ of module.
+        path = os.path.join(os.path.dirname(sys.modules[f.__module__].__file__), "turbo_%s.pyx" % functionname)
         if os.path.exists(path):
             f = open(path)
             try:
