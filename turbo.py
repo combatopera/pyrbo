@@ -1,10 +1,12 @@
-import inspect, re, importlib, pyximport, sys, os
+import inspect, re, importlib, pyximport, sys, os, itertools
 
 pyximport.install(inplace = True, build_in_temp = False)
 
-template = '''cimport numpy as np
+header = '''cimport numpy as np
 import cython
+'''
 
+template = '''
 @cython.boundscheck(False)
 def %(name)s(%(params)s):
 %(code)s'''
@@ -25,31 +27,43 @@ def getbody(f):
         i += 1
     return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + eol for line in lines[i:])
 
-class Array:
+typeparamtoindex = {}
+for i, name in enumerate(xrange(ord('T'), ord('Z') + 1)):
+    name = chr(name)
+    exec "class %s: pass" % name
+    typeparamtoindex[eval(name)] = i
+
+class Variable:
 
     def __init__(self, type):
-        self.typename = type.__name__
+        self.type = type
 
-    def param(self, name):
-        return "np.ndarray[np.%s_t] py_%s" % (self.typename, name)
+    def typename(self, variant):
+        try:
+            t = variant.types[typeparamtoindex[self.type]]
+        except KeyError:
+            t = self.type
+        return t.__name__
 
-    def itercdefs(self, name, isparam):
+class Array(Variable):
+
+    def param(self, variant, name):
+        return "np.ndarray[np.%s_t] py_%s" % (self.typename(variant), name)
+
+    def itercdefs(self, variant, name, isparam):
         if isparam:
-            yield "cdef np.%s_t* %s = &py_%s[0]" % (self.typename, name, name)
+            yield "cdef np.%s_t* %s = &py_%s[0]" % (self.typename(variant), name, name)
         else:
-            yield "cdef np.%s_t* %s" % (self.typename, name)
+            yield "cdef np.%s_t* %s" % (self.typename(variant), name)
 
-class Scalar:
+class Scalar(Variable):
 
-    def __init__(self, type):
-        self.typename = type.__name__
+    def param(self, variant, name):
+        return "np.%s_t %s" % (self.typename(variant), name)
 
-    def param(self, name):
-        return "np.%s_t %s" % (self.typename, name)
-
-    def itercdefs(self, name, isparam):
+    def itercdefs(self, variant, name, isparam):
         if not isparam:
-            yield "cdef np.%s_t %s" % (self.typename, name)
+            yield "cdef np.%s_t %s" % (self.typename(variant), name)
 
 def getpackagedot(f):
     p = (f.__module__ + '.').split('.')
@@ -58,9 +72,15 @@ def getpackagedot(f):
 
 class NoSuchVariableException(Exception): pass
 
+class Variant:
+
+    def __init__(self, types):
+        self.suffix = ''.join("_%s" % t.__name__ for t in types)
+        self.types = types
+
 class Turbo:
 
-    def __init__(self, nametotype):
+    def __init__(self, gtypelists, nametotype):
         self.nametotypeinfo = {}
         for name, thetype in nametotype.iteritems():
             if list == type(thetype):
@@ -69,27 +89,30 @@ class Turbo:
             else:
                 typeinfo = Scalar(thetype)
             self.nametotypeinfo[name] = typeinfo
+        self.variants = [Variant(v) for v in itertools.product(*gtypelists)]
 
     def __call__(self, f):
         varnames = set(f.func_code.co_varnames)
         for name in self.nametotypeinfo:
             if name not in varnames:
                 raise NoSuchVariableException(name)
-        params = []
-        cdefs = []
-        for i, name in enumerate(f.func_code.co_varnames):
-            typeinfo = self.nametotypeinfo[name]
-            isparam = i < f.func_code.co_argcount
-            if isparam:
-                params.append(typeinfo.param(name))
-            cdefs.extend(typeinfo.itercdefs(name, isparam))
         functionname = f.__name__
         bodyindent, body = getbody(f)
-        text = template % dict(name = functionname,
-            params = ', '.join(params),
-            code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body)
+        text = header
+        for variant in self.variants:
+            params = []
+            cdefs = []
+            for i, name in enumerate(f.func_code.co_varnames):
+                typeinfo = self.nametotypeinfo[name]
+                isparam = i < f.func_code.co_argcount
+                if isparam:
+                    params.append(typeinfo.param(variant, name))
+                cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
+            text += template % dict(name = functionname + variant.suffix,
+                params = ', '.join(params),
+                code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body)
         fqmodulename = getpackagedot(f) + 'turbo_' + functionname
-        path = fqmodulename.replace('.', os.sep) + '.pyx'
+        path = fqmodulename.replace('.', os.sep) + '.pyx' # FIXME: Should use __file__ of module.
         if os.path.exists(path):
             f = open(path)
             try:
@@ -106,7 +129,17 @@ class Turbo:
             finally:
                 g.close()
         importlib.import_module(fqmodulename)
-        return getattr(sys.modules[fqmodulename], functionname)
+        root = {}
+        rootkey = None # Abuse this as a unit type.
+        for variant in self.variants:
+            parent = root
+            keys = (rootkey,) + variant.types
+            for k in keys[:-1]:
+                if k not in parent:
+                    parent[k] = {}
+                parent = parent[k]
+            parent[keys[-1]] = getattr(sys.modules[fqmodulename], functionname + variant.suffix)
+        return root[rootkey]
 
-def turbo(**nametotype):
-    return Turbo(nametotype)
+def turbo(*gtypelists, **nametotype):
+    return Turbo(gtypelists, nametotype)
