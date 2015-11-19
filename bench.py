@@ -30,10 +30,10 @@ def main():
         if npsum == task:
             scale = quartiles[1]
             check = out
-            print check[:5], check[-5:]
         elif not np.array_equal(check, out):
             raise Exception
-        print ' '.join("%10.6f" % (t/scale) for t in quartiles)
+        print ' '.join("%10.6f" % (t / scale) for t in quartiles)
+    print check[:5], check[-5:]
 
 if '__main__' == __name__:
     main()
