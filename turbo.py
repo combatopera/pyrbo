@@ -8,6 +8,7 @@ import cython
 
 template = '''
 @cython.boundscheck(False)
+@cython.cdivision(True) # Don't check for divide-by-zero.
 def %(name)s(%(params)s):
 %(code)s'''
 
