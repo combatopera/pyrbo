@@ -1,2 +1,2 @@
 [.]pyc$
-/turbo_.+[.](pyx|c|so)$
+(^|/)turbo_.+[.](pyx|c|so)$
