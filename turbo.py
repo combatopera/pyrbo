@@ -1,5 +1,6 @@
 import inspect, re, importlib, pyximport, sys, os, itertools
 
+# FIXME: This should not be here, it overrides the deployable's options.
 pyximport.install(inplace = True, build_in_temp = False)
 
 header = '''cimport numpy as np
