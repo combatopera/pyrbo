@@ -19,7 +19,7 @@
 
 set -ex
 
-pip install pyflakes
+pip install pyflakes numpy
 
 cd ..
 
