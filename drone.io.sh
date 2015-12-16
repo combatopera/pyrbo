@@ -19,6 +19,8 @@
 
 set -ex
 
+pip install pyflakes
+
 cd ..
 
 for project in runpy; do
