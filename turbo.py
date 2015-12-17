@@ -20,13 +20,12 @@ import inspect, re, importlib, pyximport, sys, os, itertools, logging
 log = logging.getLogger(__name__)
 
 def pyxinstall():
+    conf = {'inplace': True, 'build_in_temp': False}
     try:
         import turboconf
-        conf = dict(turboconf.turboconf)
+        conf.update(turboconf.turboconf)
     except ImportError:
-        conf = {}
-    conf.setdefault('inplace', True)
-    conf.setdefault('build_in_temp', False)
+        pass
     log.debug("pyximport config: %s", conf)
     pyximport.install(**conf) # Note -O3 is apparently the default.
 pyxinstall()
