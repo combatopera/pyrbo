@@ -15,10 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with turbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, pyximport, sys, os, itertools
+import inspect, re, importlib, pyximport, sys, os, itertools, logging
 
-# FIXME: This should not be here, it overrides the deployable's options.
-pyximport.install(inplace = True, build_in_temp = False)
+log = logging.getLogger(__name__)
+
+def pyxinstall():
+    try:
+        import turboconf
+        conf = dict(turboconf.turboconf)
+    except ImportError:
+        conf = {}
+    conf.setdefault('inplace', True)
+    conf.setdefault('build_in_temp', False)
+    log.debug("pyximport config: %s", conf)
+    pyximport.install(**conf) # Note -O3 is apparently the default.
+pyxinstall()
+del pyxinstall
 
 header = '''cimport numpy as np
 import cython
