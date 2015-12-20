@@ -25,7 +25,7 @@ def pyxinstall():
         import turboconf
         conf.update(turboconf.turboconf)
     except ImportError:
-        pass
+        log.debug('turboconf module not found.')
     log.debug("pyximport config: %s", conf)
     pyximport.install(**conf) # Note -O3 is apparently the default.
 pyxinstall()
