@@ -35,7 +35,7 @@ wget --no-verbose http://repo.continuum.io/miniconda/Miniconda-$condaversion-Lin
 
 bash Miniconda-$condaversion-Linux-x86_64.sh <<<$'\nyes\nminiconda\nno\n'
 
-miniconda/bin/conda install -q nose numpy cython pyflakes
+miniconda/bin/conda install -q python=2.7.9=1 pyflakes nose numpy cython
 
 export MINICONDA_HOME="$PWD/miniconda"
 
