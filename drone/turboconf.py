@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Copyright 2014 Andrzej Cichocki
 
 # This file is part of turbo.
@@ -17,22 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with turbo.  If not, see <http://www.gnu.org/licenses/>.
 
-set -ex
+import numpy as np
 
-pip install pyflakes numpy cython
-
-PYTHONPATH="$PWD/drone"
-
-cd ..
-
-for project in runpy; do
-
-    hg clone https://bitbucket.org/combatopera/$project
-
-done
-
-PATH="$PWD/runpy:$PATH"
-
-cd -
-
-tests
+turboconf = {
+    'setup_args': {
+        'include_dirs': np.get_include(),
+    },
+}
