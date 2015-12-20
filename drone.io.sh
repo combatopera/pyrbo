@@ -41,6 +41,6 @@ export MINICONDA_HOME="$PWD/miniconda"
 
 cd -
 
-PYTHONPATH="$PWD/drone"
+export PYTHONPATH="$PWD/drone"
 
 tests
