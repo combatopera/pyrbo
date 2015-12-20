@@ -19,9 +19,7 @@
 
 set -ex
 
-pip install pyflakes numpy cython
-
-PYTHONPATH="$PWD/drone"
+condaversion=3.16.0
 
 cd ..
 
@@ -33,6 +31,16 @@ done
 
 PATH="$PWD/runpy:$PATH"
 
+wget --no-verbose http://repo.continuum.io/miniconda/Miniconda-$condaversion-Linux-x86_64.sh
+
+bash Miniconda-$condaversion-Linux-x86_64.sh <<<$'\nyes\nminiconda\nno\n'
+
+miniconda/bin/conda install -q numpy cython pyflakes
+
+export MINICONDA_HOME="$PWD/miniconda"
+
 cd -
+
+PYTHONPATH="$PWD/drone"
 
 tests
