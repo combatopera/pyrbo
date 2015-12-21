@@ -1,4 +1,4 @@
 author = 'Andrzej Cichocki'
 name = 'turbo'
 projects = 'turbo/drone',
-deps = 'numpy',
+deps = 'numpy', 'cython'
