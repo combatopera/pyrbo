@@ -31,16 +31,6 @@ def pyxinstall():
 pyxinstall()
 del pyxinstall
 
-header = '''cimport numpy as np
-import cython
-'''
-
-template = '''
-@cython.boundscheck(False)
-@cython.cdivision(True) # Don't check for divide-by-zero.
-def %(name)s(%(params)s):
-%(code)s'''
-
 typeparamtoindex = {}
 for i, name in enumerate(xrange(ord('T'), ord('Z') + 1)):
     name = chr(name)
@@ -92,6 +82,14 @@ class Variant:
 
 class BaseFunction:
 
+    header = '''cimport numpy as np
+import cython
+'''
+    template = '''
+@cython.boundscheck(False)
+@cython.cdivision(True) # Don't check for divide-by-zero.
+def %(name)s(%(params)s):
+%(code)s'''
     eol = re.search(r'[\r\n]+', template).group()
     indentpattern = re.compile(r'^\s*')
 
@@ -128,7 +126,7 @@ class BaseFunction:
             if isparam:
                 params.append(typeinfo.param(variant, name))
             cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
-        text = header + (template % dict(name = functionname,
+        text = self.header + (self.template % dict(name = functionname,
             params = ', '.join(params),
             code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body))
         fqmodulename = self.pyfunc.__module__ + '_turbo.' + functionname
