@@ -100,6 +100,9 @@ def getpackagedot(pyfunc):
     del p[-2]
     return '.'.join(p)
 
+def simplemodulename(pyfunc):
+    return pyfunc.__module__.split('.')[-1]
+
 class NoSuchVariableException(Exception): pass
 
 class Variant:
@@ -133,8 +136,8 @@ class BaseFunction:
         text = header + (template % dict(name = functionname,
             params = ', '.join(params),
             code = ''.join("%s%s%s" % (self.bodyindent, cdef, eol) for cdef in cdefs) + self.body))
-        fqmodulename = getpackagedot(self.pyfunc) + 'turbo_' + functionname
-        path = os.path.join(os.path.dirname(sys.modules[self.pyfunc.__module__].__file__), "turbo_%s.pyx" % functionname)
+        fqmodulename = "%s%s_turbo.%s" % (getpackagedot(self.pyfunc), simplemodulename(self.pyfunc), functionname)
+        path = os.path.join(os.path.dirname(sys.modules[self.pyfunc.__module__].__file__), simplemodulename(self.pyfunc) + '_turbo', functionname + '.pyx')
         if os.path.exists(path):
             file = open(path)
             try:
@@ -144,6 +147,11 @@ class BaseFunction:
         else:
             existingtext = None
         if text != existingtext:
+            try:
+                os.mkdir(os.path.dirname(path))
+                open(os.path.join(os.path.dirname(path), '__init__.py'), 'w').close()
+            except OSError:
+                pass
             g = open(path, 'w')
             try:
                 g.write(text)
