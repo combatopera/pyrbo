@@ -37,6 +37,12 @@ for i, name in enumerate(xrange(ord('T'), ord('Z') + 1)):
     exec "class %s: pass" % name
     typeparamtoindex[eval(name)] = i
 
+def nameorrepr(a):
+    try:
+        return a.__name__
+    except AttributeError:
+        return repr(a)
+
 class Variable:
 
     def __init__(self, type):
@@ -44,12 +50,15 @@ class Variable:
 
     def typename(self, variant):
         try:
-            t = variant.types[typeparamtoindex[self.type]]
+            a = variant.args[typeparamtoindex[self.type]]
         except KeyError:
-            t = self.type
-        return t.__name__
+            a = self.type
+        return nameorrepr(a)
 
 class Array(Variable):
+
+    def isparam(self):
+        return False
 
     def param(self, variant, name):
         return "np.ndarray[np.%s_t] py_%s" % (self.typename(variant), name)
@@ -62,6 +71,9 @@ class Array(Variable):
 
 class Scalar(Variable):
 
+    def isparam(self):
+        return self.type in typeparamtoindex
+
     def param(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
 
@@ -73,9 +85,9 @@ class NoSuchVariableException(Exception): pass
 
 class Variant:
 
-    def __init__(self, types):
-        self.suffix = ''.join("_%s" % t.__name__ for t in types)
-        self.types = types
+    def __init__(self, args):
+        self.suffix = ''.join("_%s" % nameorrepr(a) for a in args)
+        self.args = args
 
 class BaseFunction:
 
@@ -105,10 +117,13 @@ def %(name)s(%(params)s):
 
     def __init__(self, nametotypeinfo, pyfunc):
         self.varnames = pyfunc.func_code.co_varnames
+        self.constnames = []
         varnames = set(self.varnames)
-        for name in nametotypeinfo:
+        for name, typeinfo in nametotypeinfo.iteritems():
             if name not in varnames:
-                raise NoSuchVariableException(name)
+                if not typeinfo.isparam():
+                    raise NoSuchVariableException(name)
+                self.constnames.append(name)
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
@@ -127,10 +142,13 @@ def %(name)s(%(params)s):
                 if isparam:
                     params.append(typeinfo.param(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
+            body = self.body
+            for name in self.constnames:
+                body = body.replace(name, self.nametotypeinfo[name].typename(variant))
             text = self.header + (self.template % dict(
                 name = functionname,
                 params = ', '.join(params),
-                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body,
+                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
             ))
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
             filepath = os.path.join(fileparent, functionname + '.pyx')
