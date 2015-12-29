@@ -23,7 +23,7 @@ def tsum(n, x, y, out):
     for i in xrange(n):
         out[i] = x[i] + y[i]
 
-@turbo([np.float32, np.int64], i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T])
+@turbo(i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T])
 def gsum(n, x, y, out):
     for i in xrange(n):
         out[i] = x[i] + y[i]
