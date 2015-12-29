@@ -117,40 +117,41 @@ def %(name)s(%(params)s):
 
     def getvariant(self, variant):
         functionname = self.name + variant.suffix
-        params = []
-        cdefs = []
-        for i, name in enumerate(self.varnames):
-            typeinfo = self.nametotypeinfo[name]
-            isparam = i < self.argcount
-            if isparam:
-                params.append(typeinfo.param(variant, name))
-            cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
-        text = self.header + (self.template % dict(
-            name = functionname,
-            params = ', '.join(params),
-            code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body,
-        ))
         fqmodulename = self.fqmodule + '_turbo.' + functionname
-        fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
-        filepath = os.path.join(fileparent, functionname + '.pyx')
-        if os.path.exists(filepath):
-            file = open(filepath)
-            try:
-                existingtext = file.read()
-            finally:
-                file.close()
-        else:
-            existingtext = None
-        if text != existingtext:
-            try:
-                os.mkdir(fileparent)
-                open(os.path.join(fileparent, '__init__.py'), 'w').close()
-            except OSError:
-                pass
-            with open(filepath, 'w') as g:
-                g.write(text)
-                g.flush()
-        importlib.import_module(fqmodulename)
+        if fqmodulename not in sys.modules:
+            params = []
+            cdefs = []
+            for i, name in enumerate(self.varnames):
+                typeinfo = self.nametotypeinfo[name]
+                isparam = i < self.argcount
+                if isparam:
+                    params.append(typeinfo.param(variant, name))
+                cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
+            text = self.header + (self.template % dict(
+                name = functionname,
+                params = ', '.join(params),
+                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body,
+            ))
+            fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
+            filepath = os.path.join(fileparent, functionname + '.pyx')
+            if os.path.exists(filepath):
+                file = open(filepath)
+                try:
+                    existingtext = file.read()
+                finally:
+                    file.close()
+            else:
+                existingtext = None
+            if text != existingtext:
+                try:
+                    os.mkdir(fileparent)
+                    open(os.path.join(fileparent, '__init__.py'), 'w').close()
+                except OSError:
+                    pass
+                with open(filepath, 'w') as g:
+                    g.write(text)
+                    g.flush()
+            importlib.import_module(fqmodulename)
         return getattr(sys.modules[fqmodulename], functionname)
 
 class Turbo:
