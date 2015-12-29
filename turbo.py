@@ -41,22 +41,6 @@ template = '''
 def %(name)s(%(params)s):
 %(code)s'''
 
-eol = re.search(r'[\r\n]+', template).group()
-
-indentpattern = re.compile(r'^\s*')
-
-def getbody(pyfunc):
-    lines = inspect.getsource(pyfunc).splitlines()
-    getindent = lambda: indentpattern.search(lines[i]).group()
-    i = 0
-    functionindentlen = len(getindent())
-    while True:
-        bodyindent = getindent()
-        if len(bodyindent) != functionindentlen:
-            break
-        i += 1
-    return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + eol for line in lines[i:])
-
 typeparamtoindex = {}
 for i, name in enumerate(xrange(ord('T'), ord('Z') + 1)):
     name = chr(name)
@@ -108,13 +92,29 @@ class Variant:
 
 class BaseFunction:
 
+    eol = re.search(r'[\r\n]+', template).group()
+    indentpattern = re.compile(r'^\s*')
+
+    @classmethod
+    def getbody(cls, pyfunc):
+        lines = inspect.getsource(pyfunc).splitlines()
+        getindent = lambda: cls.indentpattern.search(lines[i]).group()
+        i = 0
+        functionindentlen = len(getindent())
+        while True:
+            bodyindent = getindent()
+            if len(bodyindent) != functionindentlen:
+                break
+            i += 1
+        return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
+
     def __init__(self, nametotypeinfo, pyfunc):
         varnames = set(pyfunc.func_code.co_varnames)
         for name in nametotypeinfo:
             if name not in varnames:
                 raise NoSuchVariableException(name)
         self.name = pyfunc.__name__
-        self.bodyindent, self.body = getbody(pyfunc)
+        self.bodyindent, self.body = self.getbody(pyfunc)
         self.nametotypeinfo = nametotypeinfo
         self.pyfunc = pyfunc
 
@@ -130,7 +130,7 @@ class BaseFunction:
             cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
         text = header + (template % dict(name = functionname,
             params = ', '.join(params),
-            code = ''.join("%s%s%s" % (self.bodyindent, cdef, eol) for cdef in cdefs) + self.body))
+            code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body))
         fqmodulename = self.pyfunc.__module__ + '_turbo.' + functionname
         fileparent = os.path.join(os.path.dirname(sys.modules[self.pyfunc.__module__].__file__), simplemodulename(self.pyfunc) + '_turbo')
         filepath = os.path.join(fileparent, functionname + '.pyx')
