@@ -125,9 +125,11 @@ def %(name)s(%(params)s):
             if isparam:
                 params.append(typeinfo.param(variant, name))
             cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
-        text = self.header + (self.template % dict(name = functionname,
+        text = self.header + (self.template % dict(
+            name = functionname,
             params = ', '.join(params),
-            code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body))
+            code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body,
+        ))
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
         filepath = os.path.join(fileparent, functionname + '.pyx')
@@ -145,12 +147,9 @@ def %(name)s(%(params)s):
                 open(os.path.join(fileparent, '__init__.py'), 'w').close()
             except OSError:
                 pass
-            g = open(filepath, 'w')
-            try:
+            with open(filepath, 'w') as g:
                 g.write(text)
                 g.flush()
-            finally:
-                g.close()
         importlib.import_module(fqmodulename)
         return getattr(sys.modules[fqmodulename], functionname)
 
