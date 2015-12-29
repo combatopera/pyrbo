@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with turbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, pyximport, sys, os, itertools, logging
+import inspect, re, importlib, pyximport, sys, os, logging
 
 log = logging.getLogger(__name__)
 
@@ -154,10 +154,24 @@ def %(name)s(%(params)s):
             importlib.import_module(fqmodulename)
         return getattr(sys.modules[fqmodulename], functionname)
 
+class Lookup:
+
+    def __init__(self, basefunc, typeargs, paramcount):
+        self.basefunc = basefunc
+        self.typeargs = typeargs
+        self.paramcount = paramcount
+
+    def __getitem__(self, typearg):
+        typeargs = self.typeargs + [typearg]
+        if len(typeargs) < self.paramcount:
+            return Lookup(self.basefunc, typeargs, self.paramcount)
+        return self.basefunc.getvariant(Variant(typeargs))
+
 class Turbo:
 
-    def __init__(self, gtypelists, nametotype):
+    def __init__(self, nametotype):
         self.nametotypeinfo = {}
+        typeparams = set()
         for name, thetype in nametotype.iteritems():
             if list == type(thetype):
                 elementtype, = thetype
@@ -165,21 +179,15 @@ class Turbo:
             else:
                 typeinfo = Scalar(thetype)
             self.nametotypeinfo[name] = typeinfo
-        self.variants = [Variant(v) for v in itertools.product(*gtypelists)]
+            if typeinfo.type in typeparamtoindex:
+                typeparams.add(typeinfo.type)
+        self.paramcount = len(typeparams)
 
     def __call__(self, pyfunc):
         basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
-        root = {}
-        rootkey = None # Abuse this as a unit type.
-        for variant in self.variants:
-            parent = root
-            keys = (rootkey,) + variant.types
-            for k in keys[:-1]:
-                if k not in parent:
-                    parent[k] = {}
-                parent = parent[k]
-            parent[keys[-1]] = basefunc.getvariant(variant)
-        return root[rootkey]
+        if self.paramcount:
+            return Lookup(basefunc, [], self.paramcount)
+        return basefunc.getvariant(Variant([]))
 
 def turbo(*gtypelists, **nametotype):
-    return Turbo(gtypelists, nametotype)
+    return Turbo(nametotype)
