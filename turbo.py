@@ -104,23 +104,24 @@ def %(name)s(%(params)s):
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
     def __init__(self, nametotypeinfo, pyfunc):
-        varnames = set(pyfunc.func_code.co_varnames)
+        self.varnames = pyfunc.func_code.co_varnames
+        varnames = set(self.varnames)
         for name in nametotypeinfo:
             if name not in varnames:
                 raise NoSuchVariableException(name)
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
+        self.argcount = pyfunc.func_code.co_argcount
         self.nametotypeinfo = nametotypeinfo
-        self.pyfunc = pyfunc
 
     def getvariant(self, variant):
         functionname = self.name + variant.suffix
         params = []
         cdefs = []
-        for i, name in enumerate(self.pyfunc.func_code.co_varnames):
+        for i, name in enumerate(self.varnames):
             typeinfo = self.nametotypeinfo[name]
-            isparam = i < self.pyfunc.func_code.co_argcount
+            isparam = i < self.argcount
             if isparam:
                 params.append(typeinfo.param(variant, name))
             cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
