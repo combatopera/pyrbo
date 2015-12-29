@@ -137,9 +137,10 @@ class BaseFunction:
             params = ', '.join(params),
             code = ''.join("%s%s%s" % (self.bodyindent, cdef, eol) for cdef in cdefs) + self.body))
         fqmodulename = "%s%s_turbo.%s" % (getpackagedot(self.pyfunc), simplemodulename(self.pyfunc), functionname)
-        path = os.path.join(os.path.dirname(sys.modules[self.pyfunc.__module__].__file__), simplemodulename(self.pyfunc) + '_turbo', functionname + '.pyx')
-        if os.path.exists(path):
-            file = open(path)
+        fileparent = os.path.join(os.path.dirname(sys.modules[self.pyfunc.__module__].__file__), simplemodulename(self.pyfunc) + '_turbo')
+        filepath = os.path.join(fileparent, functionname + '.pyx')
+        if os.path.exists(filepath):
+            file = open(filepath)
             try:
                 existingtext = file.read()
             finally:
@@ -148,11 +149,11 @@ class BaseFunction:
             existingtext = None
         if text != existingtext:
             try:
-                os.mkdir(os.path.dirname(path))
-                open(os.path.join(os.path.dirname(path), '__init__.py'), 'w').close()
+                os.mkdir(fileparent)
+                open(os.path.join(fileparent, '__init__.py'), 'w').close()
             except OSError:
                 pass
-            g = open(path, 'w')
+            g = open(filepath, 'w')
             try:
                 g.write(text)
                 g.flush()
