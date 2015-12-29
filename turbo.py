@@ -45,8 +45,8 @@ eol = re.search(r'[\r\n]+', template).group()
 
 indentpattern = re.compile(r'^\s*')
 
-def getbody(f):
-    lines = inspect.getsource(f).splitlines()
+def getbody(pyfunc):
+    lines = inspect.getsource(pyfunc).splitlines()
     getindent = lambda: indentpattern.search(lines[i]).group()
     i = 0
     functionindentlen = len(getindent())
@@ -95,8 +95,8 @@ class Scalar(Variable):
         if not isparam:
             yield "cdef np.%s_t %s" % (self.typename(variant), name)
 
-def getpackagedot(f):
-    p = (f.__module__ + '.').split('.')
+def getpackagedot(pyfunc):
+    p = (pyfunc.__module__ + '.').split('.')
     del p[-2]
     return '.'.join(p)
 
@@ -121,36 +121,36 @@ class Turbo:
             self.nametotypeinfo[name] = typeinfo
         self.variants = [Variant(v) for v in itertools.product(*gtypelists)]
 
-    def __call__(self, f):
-        varnames = set(f.func_code.co_varnames)
+    def __call__(self, pyfunc):
+        varnames = set(pyfunc.func_code.co_varnames)
         for name in self.nametotypeinfo:
             if name not in varnames:
                 raise NoSuchVariableException(name)
-        basefunctionname = f.__name__
-        bodyindent, body = getbody(f)
+        basefunctionname = pyfunc.__name__
+        bodyindent, body = getbody(pyfunc)
         root = {}
         rootkey = None # Abuse this as a unit type.
         for variant in self.variants:
             functionname = basefunctionname + variant.suffix
             params = []
             cdefs = []
-            for i, name in enumerate(f.func_code.co_varnames):
+            for i, name in enumerate(pyfunc.func_code.co_varnames):
                 typeinfo = self.nametotypeinfo[name]
-                isparam = i < f.func_code.co_argcount
+                isparam = i < pyfunc.func_code.co_argcount
                 if isparam:
                     params.append(typeinfo.param(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
             text = header + (template % dict(name = functionname,
                 params = ', '.join(params),
                 code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body))
-            fqmodulename = getpackagedot(f) + 'turbo_' + functionname
-            path = os.path.join(os.path.dirname(sys.modules[f.__module__].__file__), "turbo_%s.pyx" % functionname)
+            fqmodulename = getpackagedot(pyfunc) + 'turbo_' + functionname
+            path = os.path.join(os.path.dirname(sys.modules[pyfunc.__module__].__file__), "turbo_%s.pyx" % functionname)
             if os.path.exists(path):
-                f = open(path)
+                file = open(path)
                 try:
-                    existingtext = f.read()
+                    existingtext = file.read()
                 finally:
-                    f.close()
+                    file.close()
             else:
                 existingtext = None
             if text != existingtext:
