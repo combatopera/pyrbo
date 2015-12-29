@@ -69,9 +69,6 @@ class Scalar(Variable):
         if not isparam:
             yield "cdef np.%s_t %s" % (self.typename(variant), name)
 
-def simplemodulename(pyfunc):
-    return pyfunc.__module__.split('.')[-1]
-
 class NoSuchVariableException(Exception): pass
 
 class Variant:
@@ -111,6 +108,7 @@ def %(name)s(%(params)s):
         for name in nametotypeinfo:
             if name not in varnames:
                 raise NoSuchVariableException(name)
+        self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
         self.nametotypeinfo = nametotypeinfo
@@ -129,8 +127,8 @@ def %(name)s(%(params)s):
         text = self.header + (self.template % dict(name = functionname,
             params = ', '.join(params),
             code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body))
-        fqmodulename = self.pyfunc.__module__ + '_turbo.' + functionname
-        fileparent = os.path.join(os.path.dirname(sys.modules[self.pyfunc.__module__].__file__), simplemodulename(self.pyfunc) + '_turbo')
+        fqmodulename = self.fqmodule + '_turbo.' + functionname
+        fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
         filepath = os.path.join(fileparent, functionname + '.pyx')
         if os.path.exists(filepath):
             file = open(filepath)
