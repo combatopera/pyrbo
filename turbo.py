@@ -126,10 +126,12 @@ class Turbo:
         for name in self.nametotypeinfo:
             if name not in varnames:
                 raise NoSuchVariableException(name)
-        functionname = f.__name__
+        basefunctionname = f.__name__
         bodyindent, body = getbody(f)
-        text = header
+        root = {}
+        rootkey = None # Abuse this as a unit type.
         for variant in self.variants:
+            functionname = basefunctionname + variant.suffix
             params = []
             cdefs = []
             for i, name in enumerate(f.func_code.co_varnames):
@@ -138,37 +140,34 @@ class Turbo:
                 if isparam:
                     params.append(typeinfo.param(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
-            text += template % dict(name = functionname + variant.suffix,
+            text = header + (template % dict(name = functionname,
                 params = ', '.join(params),
-                code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body)
-        fqmodulename = getpackagedot(f) + 'turbo_' + functionname
-        path = os.path.join(os.path.dirname(sys.modules[f.__module__].__file__), "turbo_%s.pyx" % functionname)
-        if os.path.exists(path):
-            f = open(path)
-            try:
-                existingtext = f.read()
-            finally:
-                f.close()
-        else:
-            existingtext = None
-        if text != existingtext:
-            g = open(path, 'w')
-            try:
-                g.write(text)
-                g.flush()
-            finally:
-                g.close()
-        importlib.import_module(fqmodulename)
-        root = {}
-        rootkey = None # Abuse this as a unit type.
-        for variant in self.variants:
+                code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body))
+            fqmodulename = getpackagedot(f) + 'turbo_' + functionname
+            path = os.path.join(os.path.dirname(sys.modules[f.__module__].__file__), "turbo_%s.pyx" % functionname)
+            if os.path.exists(path):
+                f = open(path)
+                try:
+                    existingtext = f.read()
+                finally:
+                    f.close()
+            else:
+                existingtext = None
+            if text != existingtext:
+                g = open(path, 'w')
+                try:
+                    g.write(text)
+                    g.flush()
+                finally:
+                    g.close()
+            importlib.import_module(fqmodulename)
             parent = root
             keys = (rootkey,) + variant.types
             for k in keys[:-1]:
                 if k not in parent:
                     parent[k] = {}
                 parent = parent[k]
-            parent[keys[-1]] = getattr(sys.modules[fqmodulename], functionname + variant.suffix)
+            parent[keys[-1]] = getattr(sys.modules[fqmodulename], functionname)
         return root[rootkey]
 
 def turbo(*gtypelists, **nametotype):
