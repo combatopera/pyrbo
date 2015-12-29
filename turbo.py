@@ -95,11 +95,6 @@ class Scalar(Variable):
         if not isparam:
             yield "cdef np.%s_t %s" % (self.typename(variant), name)
 
-def getpackagedot(pyfunc):
-    p = (pyfunc.__module__ + '.').split('.')
-    del p[-2]
-    return '.'.join(p)
-
 def simplemodulename(pyfunc):
     return pyfunc.__module__.split('.')[-1]
 
@@ -136,7 +131,7 @@ class BaseFunction:
         text = header + (template % dict(name = functionname,
             params = ', '.join(params),
             code = ''.join("%s%s%s" % (self.bodyindent, cdef, eol) for cdef in cdefs) + self.body))
-        fqmodulename = "%s%s_turbo.%s" % (getpackagedot(self.pyfunc), simplemodulename(self.pyfunc), functionname)
+        fqmodulename = self.pyfunc.__module__ + '_turbo.' + functionname
         fileparent = os.path.join(os.path.dirname(sys.modules[self.pyfunc.__module__].__file__), simplemodulename(self.pyfunc) + '_turbo')
         filepath = os.path.join(fileparent, functionname + '.pyx')
         if os.path.exists(filepath):
