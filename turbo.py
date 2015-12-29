@@ -108,6 +108,16 @@ class Variant:
         self.suffix = ''.join("_%s" % t.__name__ for t in types)
         self.types = types
 
+class BaseFunction:
+
+    def __init__(self, turbonames, pyfunc):
+        varnames = set(pyfunc.func_code.co_varnames)
+        for name in turbonames:
+            if name not in varnames:
+                raise NoSuchVariableException(name)
+        self.name = pyfunc.__name__
+        self.bodyindent, self.body = getbody(pyfunc)
+
 class Turbo:
 
     def __init__(self, gtypelists, nametotype):
@@ -122,16 +132,11 @@ class Turbo:
         self.variants = [Variant(v) for v in itertools.product(*gtypelists)]
 
     def __call__(self, pyfunc):
-        varnames = set(pyfunc.func_code.co_varnames)
-        for name in self.nametotypeinfo:
-            if name not in varnames:
-                raise NoSuchVariableException(name)
-        basefunctionname = pyfunc.__name__
-        bodyindent, body = getbody(pyfunc)
+        basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
         root = {}
         rootkey = None # Abuse this as a unit type.
         for variant in self.variants:
-            functionname = basefunctionname + variant.suffix
+            functionname = basefunc.name + variant.suffix
             params = []
             cdefs = []
             for i, name in enumerate(pyfunc.func_code.co_varnames):
@@ -142,7 +147,7 @@ class Turbo:
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
             text = header + (template % dict(name = functionname,
                 params = ', '.join(params),
-                code = ''.join("%s%s%s" % (bodyindent, cdef, eol) for cdef in cdefs) + body))
+                code = ''.join("%s%s%s" % (basefunc.bodyindent, cdef, eol) for cdef in cdefs) + basefunc.body))
             fqmodulename = getpackagedot(pyfunc) + 'turbo_' + functionname
             path = os.path.join(os.path.dirname(sys.modules[pyfunc.__module__].__file__), "turbo_%s.pyx" % functionname)
             if os.path.exists(path):
