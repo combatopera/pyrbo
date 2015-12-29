@@ -189,5 +189,5 @@ class Turbo:
             return Lookup(basefunc, [], self.paramcount)
         return basefunc.getvariant(Variant([]))
 
-def turbo(*gtypelists, **nametotype):
+def turbo(**nametotype):
     return Turbo(nametotype)

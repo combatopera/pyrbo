@@ -28,11 +28,11 @@ def pytrue(x, y):
 def pyfloor(x, y):
     return x // y
 
-@turbo([np.int32, np.float32], x = T, y = T)
+@turbo(x = T, y = T)
 def turbotrue(x, y):
     return x / y
 
-@turbo([np.int32, np.float32], x = T, y = T)
+@turbo(x = T, y = T)
 def turbofloor(x, y):
     return x // y
 
