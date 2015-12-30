@@ -51,7 +51,7 @@ class Variable:
 
     def typename(self, variant):
         try:
-            a = variant.args[typeparamtoindex[self.type]]
+            a = variant.args[self.type.__name__]
         except KeyError:
             a = self.type
         return nameorobj(a)
@@ -87,7 +87,7 @@ class NoSuchVariableException(Exception): pass
 class Variant:
 
     def __init__(self, args):
-        self.suffix = ''.join("_%s" % nameorobj(a) for a in args)
+        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(args.iteritems()))
         self.args = args
 
 class BaseFunction:
@@ -182,22 +182,26 @@ def %(name)s(%(params)s):
 
 class Lookup:
 
-    def __init__(self, basefunc, typeargs, paramcount):
+    def __init__(self, basefunc, typeargs, typeparams):
         self.basefunc = basefunc
         self.typeargs = typeargs
-        self.paramcount = paramcount
+        self.typeparams = typeparams
 
-    def __getitem__(self, typearg):
-        typeargs = self.typeargs + [typearg]
-        if len(typeargs) < self.paramcount:
-            return Lookup(self.basefunc, typeargs, self.paramcount)
+    def __call__(self, **typeargsupdate):
+        for k in typeargsupdate.iterkeys():
+            if k not in self.typeparams:
+                raise Exception(k)
+        typeargs = self.typeargs.copy()
+        typeargs.update(typeargsupdate)
+        if len(typeargs) < len(self.typeparams):
+            return Lookup(self.basefunc, typeargs, self.typeparams)
         return self.basefunc.getvariant(Variant(typeargs))
 
 class Turbo:
 
     def __init__(self, nametotype):
         self.nametotypeinfo = {}
-        typeparams = set()
+        self.typeparams = set()
         for name, thetype in nametotype.iteritems():
             if list == type(thetype):
                 elementtype, = thetype
@@ -206,14 +210,13 @@ class Turbo:
                 typeinfo = Scalar(thetype)
             self.nametotypeinfo[name] = typeinfo
             if typeinfo.type in typeparamtoindex:
-                typeparams.add(typeinfo.type)
-        self.paramcount = len(typeparams)
+                self.typeparams.add(typeinfo.type.__name__)
 
     def __call__(self, pyfunc):
         basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
-        if self.paramcount:
-            return Lookup(basefunc, [], self.paramcount)
-        return basefunc.getvariant(Variant([]))
+        if self.typeparams:
+            return Lookup(basefunc, {}, self.typeparams)
+        return basefunc.getvariant(Variant({}))
 
 def turbo(**nametotype):
     return Turbo(nametotype)

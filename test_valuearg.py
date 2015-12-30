@@ -30,7 +30,7 @@ def turbotuple(x):
 class TestValueArg(unittest.TestCase):
 
     def test_works(self):
-        self.assertEqual((-5, 6), turbotuple[np.int32][6](-5))
+        self.assertEqual((-5, 6), turbotuple(T = np.int32, U = 6)(-5))
 
 if '__main__' == __name__:
     unittest.main()
