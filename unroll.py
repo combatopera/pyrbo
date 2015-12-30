@@ -15,53 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with turbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, re, logging, importlib
-
-log = logging.getLogger(__name__)
+import re
+from cStringIO import StringIO
 
 pattern = re.compile(r'^(\s*)for\s+UNROLL\s+in\s+xrange\s*\(\s*([^\s]+)\s*\)\s*:\s*$')
 indentregex = re.compile(r'^\s*')
 maxchunk = 0x80
 
-def importunrolled(rootdir, fromfqname, tofqname, options):
-    fqnametopath = lambda fqname: os.path.join(*[rootdir] + fqname.split('.'))
-    frompath = fqnametopath(fromfqname) + '.pyx'
-    topath = fqnametopath(tofqname) + '.pyx'
-    binpath = fqnametopath(tofqname) + '.so'
-    if isuptodate(frompath, binpath):
-        if os.path.exists(topath):
-            log.debug("Deleting: %s", topath)
-            os.remove(topath)
-        formats = "Importing: %s", "%s imported."
-    else:
-        unroll(frompath, topath, options)
-        formats = "Compiling: %s", "%s compiled."
-    log.debug(formats[0], tofqname)
-    importlib.import_module(tofqname)
-    log.debug(formats[1], tofqname)
-
-def isuptodate(frompath, binpath):
-    if os.path.exists(binpath):
-        frommtime = os.path.getmtime(frompath)
-        binmtime = os.path.getmtime(binpath)
-        if binmtime >= frommtime: # Don't bother checking dependencies.
-            return True
-
-def unroll(frompath, topath, options):
-    f = open(frompath)
-    try:
-        g = open(topath, 'w')
-        try:
-            unrollimpl(f, g, options)
-            g.flush()
-        finally:
-            g.close()
-    finally:
-        f.close()
-
-def unrollimpl(f, g, options):
-    for name, value in options.iteritems():
-        print >> g, "%s = %r" % (name, value)
+def unroll(body, g, consts, eol):
+    f = StringIO(body)
     buffer = []
     while True:
         line = buffer.pop(0) if buffer else f.readline()
@@ -69,7 +31,7 @@ def unrollimpl(f, g, options):
             break
         m = pattern.search(line)
         if m is None:
-            g.write(line)
+            g.append(line)
             continue
         outerindent = m.group(1)
         variable = m.group(2)
@@ -81,20 +43,20 @@ def unrollimpl(f, g, options):
             body.append(line)
             line = f.readline()
         buffer.append(line)
-        if variable in options:
-            for _ in xrange(options[variable]):
+        if variable in consts:
+            for _ in xrange(consts[variable]):
                 for line in body:
-                    g.write(outerindent + line[len(innerindent):])
+                    g.append(outerindent + line[len(innerindent):])
         else:
             mask = 0x01
             while mask < maxchunk:
-                print >> g, "%sif %s & 0x%x:" % (outerindent, variable, mask)
+                g.append("%sif %s & 0x%x:%s" % (outerindent, variable, mask, eol))
                 for _ in xrange(mask):
                     for line in body:
-                        g.write(line)
+                        g.append(line)
                 mask <<= 1
-            print >> g, "%swhile %s >= 0x%x:" % (outerindent, variable, maxchunk)
+            g.append("%swhile %s >= 0x%x:%s" % (outerindent, variable, maxchunk, eol))
             for _ in xrange(maxchunk):
                 for line in body:
-                    g.write(line)
-            print >> g, "%s%s -= 0x%x" % (innerindent, variable, maxchunk)
+                    g.append(line)
+            g.append("%s%s -= 0x%x%s" % (innerindent, variable, maxchunk, eol))
