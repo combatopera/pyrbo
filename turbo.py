@@ -16,6 +16,7 @@
 # along with turbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect, re, importlib, pyximport, sys, os, logging
+from unroll import unroll
 
 log = logging.getLogger(__name__)
 
@@ -145,13 +146,17 @@ def %(name)s(%(params)s):
                     params.append(typeinfo.param(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
             defs = []
-            for name in self.constnames:
-                defs.append(self.deftemplate % (name, self.nametotypeinfo[name].typename(variant)))
+            consts = dict([name, self.nametotypeinfo[name].typename(variant)] for name in self.constnames)
+            for item in consts.iteritems():
+                defs.append(self.deftemplate % item)
+            body = []
+            unroll(self.body, body, consts, self.eol)
+            body = ''.join(body)
             text = self.template % dict(
                 defs = ''.join(defs),
                 name = functionname,
                 params = ', '.join(params),
-                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body,
+                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
             )
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
             filepath = os.path.join(fileparent, functionname + '.pyx')
