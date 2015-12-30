@@ -91,10 +91,9 @@ class Variant:
 
 class BaseFunction:
 
-    header = '''cimport numpy as np
+    template = '''cimport numpy as np
 import cython
-'''
-    template = '''
+
 @cython.boundscheck(False)
 @cython.cdivision(True) # Don't check for divide-by-zero.
 def %(name)s(%(params)s):
@@ -145,11 +144,11 @@ def %(name)s(%(params)s):
             body = self.body
             for name in self.constnames:
                 body = body.replace(name, self.nametotypeinfo[name].typename(variant))
-            text = self.header + (self.template % dict(
+            text = self.template % dict(
                 name = functionname,
                 params = ', '.join(params),
                 code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
-            ))
+            )
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
             filepath = os.path.join(fileparent, functionname + '.pyx')
             if os.path.exists(filepath):
