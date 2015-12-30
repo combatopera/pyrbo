@@ -37,6 +37,7 @@ for i, name in enumerate(xrange(ord('T'), ord('Z') + 1)):
     name = chr(name)
     exec "class %s: pass" % name
     typeparamtoindex[eval(name)] = i
+nametotypeparam = dict([t.__name__, t] for t in typeparamtoindex)
 
 def nameorobj(a):
     try:
@@ -51,7 +52,7 @@ class Variable:
 
     def typename(self, variant):
         try:
-            a = variant.args[self.type.__name__]
+            a = variant.args[self.type]
         except KeyError:
             a = self.type
         return nameorobj(a)
@@ -188,11 +189,11 @@ class Lookup:
         self.typeparams = typeparams
 
     def __call__(self, **typeargsupdate):
-        for k in typeargsupdate.iterkeys():
-            if k not in self.typeparams:
-                raise Exception(k)
         typeargs = self.typeargs.copy()
-        typeargs.update(typeargsupdate)
+        for k, v in typeargsupdate.iteritems():
+            if k not in nametotypeparam or nametotypeparam[k] not in self.typeparams:
+                raise Exception(k)
+            typeargs[nametotypeparam[k]] = v
         if len(typeargs) < len(self.typeparams):
             return Lookup(self.basefunc, typeargs, self.typeparams)
         return self.basefunc.getvariant(Variant(typeargs))
@@ -210,7 +211,7 @@ class Turbo:
                 typeinfo = Scalar(thetype)
             self.nametotypeinfo[name] = typeinfo
             if typeinfo.type in typeparamtoindex:
-                self.typeparams.add(typeinfo.type.__name__)
+                self.typeparams.add(typeinfo.type)
 
     def __call__(self, pyfunc):
         basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
