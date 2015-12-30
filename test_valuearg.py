@@ -19,18 +19,18 @@
 
 import numpy as np
 import unittest
-from turbo import turbo, T, U
+from turbo import turbo, T, Y
 
 y = None
 
-@turbo(x = T, y = U)
+@turbo(x = T, y = Y)
 def turbotuple(x):
     return x, y
 
 class TestValueArg(unittest.TestCase):
 
     def test_works(self):
-        self.assertEqual((-5, 6), turbotuple(T = np.int32, U = 6)(-5))
+        self.assertEqual((-5, 6), turbotuple(T = np.int32, Y = 6)(-5))
 
 if '__main__' == __name__:
     unittest.main()
