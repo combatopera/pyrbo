@@ -37,11 +37,11 @@ for i, name in enumerate(xrange(ord('T'), ord('Z') + 1)):
     exec "class %s: pass" % name
     typeparamtoindex[eval(name)] = i
 
-def nameorrepr(a):
+def nameorobj(a):
     try:
         return a.__name__
     except AttributeError:
-        return repr(a)
+        return a
 
 class Variable:
 
@@ -53,7 +53,7 @@ class Variable:
             a = variant.args[typeparamtoindex[self.type]]
         except KeyError:
             a = self.type
-        return nameorrepr(a)
+        return nameorobj(a)
 
 class Array(Variable):
 
@@ -86,7 +86,7 @@ class NoSuchVariableException(Exception): pass
 class Variant:
 
     def __init__(self, args):
-        self.suffix = ''.join("_%s" % nameorrepr(a) for a in args)
+        self.suffix = ''.join("_%s" % nameorobj(a) for a in args)
         self.args = args
 
 class BaseFunction:
@@ -94,10 +94,13 @@ class BaseFunction:
     template = '''cimport numpy as np
 import cython
 
+%(defs)s
 @cython.boundscheck(False)
 @cython.cdivision(True) # Don't check for divide-by-zero.
 def %(name)s(%(params)s):
 %(code)s'''
+    deftemplate = '''DEF %s = %r
+'''
     eol = re.search(r'[\r\n]+', template).group()
     indentpattern = re.compile(r'^\s*')
 
@@ -141,13 +144,14 @@ def %(name)s(%(params)s):
                 if isparam:
                     params.append(typeinfo.param(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
-            body = self.body
+            defs = []
             for name in self.constnames:
-                body = body.replace(name, self.nametotypeinfo[name].typename(variant))
+                defs.append(self.deftemplate % (name, self.nametotypeinfo[name].typename(variant)))
             text = self.template % dict(
+                defs = ''.join(defs),
                 name = functionname,
                 params = ', '.join(params),
-                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
+                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + self.body,
             )
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
             filepath = os.path.join(fileparent, functionname + '.pyx')
