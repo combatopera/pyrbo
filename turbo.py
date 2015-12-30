@@ -118,7 +118,7 @@ def %(name)s(%(params)s):
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
     def __init__(self, nametotypeinfo, pyfunc):
-        self.varnames = pyfunc.func_code.co_varnames
+        self.varnames = [n for n in pyfunc.func_code.co_varnames if 'UNROLL' != n]
         self.constnames = []
         varnames = set(self.varnames)
         for name, typeinfo in nametotypeinfo.iteritems():
