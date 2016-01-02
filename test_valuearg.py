@@ -19,7 +19,7 @@
 
 import numpy as np
 import unittest
-from turbo import turbo, T, Y
+from pyrbo import turbo, T, Y
 
 y = None
 
