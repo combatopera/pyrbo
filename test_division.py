@@ -20,7 +20,7 @@
 from __future__ import division # Required by tests script.
 import numpy as np
 import unittest
-from turbo import turbo, T
+from pyrbo import turbo, T
 
 def pytrue(x, y):
     return x / y
