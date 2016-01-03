@@ -178,6 +178,7 @@ def %(name)s(%(params)s):
                 with open(filepath, 'w') as g:
                     g.write(text)
                     g.flush()
+                log.debug("Compiling: %s", functionname)
             importlib.import_module(fqmodulename)
         return getattr(sys.modules[fqmodulename], functionname)
 
