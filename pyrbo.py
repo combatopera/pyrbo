@@ -172,9 +172,9 @@ def %(name)s(%(params)s):
             if text != existingtext:
                 try:
                     os.mkdir(fileparent)
-                    open(os.path.join(fileparent, '__init__.py'), 'w').close()
                 except OSError:
                     pass
+                open(os.path.join(fileparent, '__init__.py'), 'w').close()
                 with open(filepath, 'w') as g:
                     g.write(text)
                     g.flush()
