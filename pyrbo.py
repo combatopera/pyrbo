@@ -52,7 +52,7 @@ class Variable:
 
     def typename(self, variant):
         try:
-            a = variant.args[self.type]
+            a = variant.typetoarg[self.type]
         except KeyError:
             a = self.type
         return nameorobj(a)
@@ -87,9 +87,10 @@ class NoSuchVariableException(Exception): pass
 
 class Variant:
 
-    def __init__(self, args):
-        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(args.iteritems()))
-        self.args = args
+    def __init__(self, typetoarg):
+        args = (a for _, a in sorted(typetoarg.iteritems(), key = lambda e: e[0].__name__))
+        self.suffix = ''.join("_%s" % nameorobj(a) for a in args)
+        self.typetoarg = typetoarg
 
 class BaseFunction:
 
