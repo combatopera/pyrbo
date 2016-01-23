@@ -58,14 +58,14 @@ def nameorobj(a):
 
 class Variable:
 
-    def __init__(self, type):
-        self.type = type
+    def __init__(self, typespec):
+        self.typespec = typespec
 
     def typename(self, variant):
         try:
-            a = variant.typetoarg[self.type]
+            a = variant.typetoarg[self.typespec]
         except KeyError:
-            a = self.type
+            a = self.typespec
         return nameorobj(a)
 
 class Array(Variable):
@@ -85,7 +85,7 @@ class Array(Variable):
 class Scalar(Variable):
 
     def isparam(self):
-        return self.type in allparams
+        return self.typespec in allparams
 
     def param(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
@@ -195,41 +195,38 @@ def %(name)s(%(params)s):
 
 class Lookup:
 
-    def __init__(self, basefunc, typeargs, typeparams):
+    def __init__(self, basefunc, typeargs, placeholders):
         self.basefunc = basefunc
         self.typeargs = typeargs
-        self.typeparams = typeparams
+        self.placeholders = placeholders
 
     def __call__(self, **typeargsupdate):
         typeargs = self.typeargs.copy()
         for k, v in typeargsupdate.iteritems():
-            if k not in nametoparam or nametoparam[k] not in self.typeparams:
+            if k not in nametoparam or nametoparam[k] not in self.placeholders:
                 raise Exception(k)
             typeargs[nametoparam[k]] = v
-        if len(typeargs) < len(self.typeparams):
-            return Lookup(self.basefunc, typeargs, self.typeparams)
+        if len(typeargs) < len(self.placeholders):
+            return Lookup(self.basefunc, typeargs, self.placeholders)
         return self.basefunc.getvariant(Variant(typeargs))
 
-class Turbo:
+class turbo:
 
-    def __init__(self, nametotype):
+    def __init__(self, **nametotype):
         self.nametotypeinfo = {}
-        self.typeparams = set()
-        for name, thetype in nametotype.iteritems():
-            if list == type(thetype):
-                elementtype, = thetype
-                typeinfo = Array(elementtype)
+        self.placeholders = set()
+        for name, typespec in nametotype.iteritems():
+            if list == type(typespec):
+                elementtypespec, = typespec
+                typeinfo = Array(elementtypespec)
             else:
-                typeinfo = Scalar(thetype)
+                typeinfo = Scalar(typespec)
             self.nametotypeinfo[name] = typeinfo
-            if typeinfo.type in allparams:
-                self.typeparams.add(typeinfo.type)
+            if typeinfo.typespec in allparams:
+                self.placeholders.add(typeinfo.typespec)
 
     def __call__(self, pyfunc):
         basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
-        if self.typeparams:
-            return Lookup(basefunc, {}, self.typeparams)
+        if self.placeholders:
+            return Lookup(basefunc, {}, self.placeholders)
         return basefunc.getvariant(Variant({}))
-
-def turbo(**nametotype):
-    return Turbo(nametotype)
