@@ -126,10 +126,13 @@ class Scalar:
 
 class NoSuchVariableException(Exception): pass
 
+class PartialFunctionException(Exception): pass
+
 class Variant:
 
     def __init__(self, placeholders, paramtoarg = {}):
-        self.suffix = ''.join("_%s" % a.nameorobj() for _, a in sorted(paramtoarg.iteritems()))
+        if len(paramtoarg) == len(placeholders):
+            self.suffix = ''.join("_%s" % a.nameorobj() for _, a in sorted(paramtoarg.iteritems()))
         self.placeholders = placeholders
         self.paramtoarg = paramtoarg
 
@@ -139,6 +142,12 @@ class Variant:
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
         return Variant(self.placeholders, paramtoarg)
+
+    def getsuffix(self):
+        try:
+            return self.suffix
+        except AttributeError:
+            raise PartialFunctionException(sorted(self.placeholders - set(self.paramtoarg)))
 
     def __getitem__(self, param):
         return self.paramtoarg[param]
@@ -189,14 +198,14 @@ def %(name)s(%(cparams)s):
         self.variants = {}
 
     def getvariant(self, variant):
+        suffix = variant.getsuffix()
         try:
-            return self.variants[variant.suffix]
+            return self.variants[suffix]
         except KeyError:
-            self.variants[variant.suffix] = f = self.getvariantimpl(variant)
+            self.variants[suffix] = f = self.getvariantimpl(self.name + suffix, variant)
             return f
 
-    def getvariantimpl(self, variant):
-        functionname = self.name + variant.suffix
+    def getvariantimpl(self, functionname, variant):
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         if fqmodulename not in sys.modules:
             cparams = []
