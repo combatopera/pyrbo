@@ -80,8 +80,8 @@ class Array(Variable):
     def cparam(self, variant, name):
         return "np.ndarray[np.%s_t] py_%s" % (self.typename(variant), name)
 
-    def itercdefs(self, variant, name, isparam):
-        if isparam:
+    def itercdefs(self, variant, name, isfuncparam):
+        if isfuncparam:
             yield "cdef np.%s_t* %s = &py_%s[0]" % (self.typename(variant), name, name)
         else:
             yield "cdef np.%s_t* %s" % (self.typename(variant), name)
@@ -94,8 +94,8 @@ class Scalar(Variable):
     def cparam(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
 
-    def itercdefs(self, variant, name, isparam):
-        if not isparam:
+    def itercdefs(self, variant, name, isfuncparam):
+        if not isfuncparam:
             yield "cdef np.%s_t %s" % (self.typename(variant), name)
 
 class NoSuchVariableException(Exception): pass
@@ -157,10 +157,10 @@ def %(name)s(%(cparams)s):
             cdefs = []
             for i, name in enumerate(self.varnames):
                 typeinfo = self.nametotypeinfo[name]
-                isparam = i < self.argcount
-                if isparam:
+                isfuncparam = i < self.argcount
+                if isfuncparam:
                     cparams.append(typeinfo.cparam(variant, name))
-                cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
+                cdefs.extend(typeinfo.itercdefs(variant, name, isfuncparam))
             defs = []
             consts = dict([name, self.nametotypeinfo[name].typename(variant)] for name in self.constnames)
             for item in consts.iteritems():
