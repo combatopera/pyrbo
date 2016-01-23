@@ -32,13 +32,23 @@ def pyxinstall():
 pyxinstall()
 del pyxinstall
 
-typeparamtoname = {}
-nametotypeparam = {}
-for name in xrange(ord('T'), ord('Z') + 1):
-    name = chr(name)
-    typeparam = object()
-    typeparamtoname[typeparam] = name
-    globals()[name] = nametotypeparam[name] = typeparam
+class Param:
+
+    def __init__(self, name):
+        self.name = name
+
+    def __eq__(self, that):
+        return self.name == that.name
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __cmp__(self, that):
+        return cmp(self.name, that.name)
+
+allparams = set(Param(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
+nametoparam = dict([p.name, p] for p in allparams)
+globals().update(nametoparam)
 
 def nameorobj(a):
     try:
@@ -75,7 +85,7 @@ class Array(Variable):
 class Scalar(Variable):
 
     def isparam(self):
-        return self.type in typeparamtoname
+        return self.type in allparams
 
     def param(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
@@ -89,8 +99,7 @@ class NoSuchVariableException(Exception): pass
 class Variant:
 
     def __init__(self, typetoarg):
-        args = (a for _, a in sorted(typetoarg.iteritems(), key = lambda e: typeparamtoname[e[0]]))
-        self.suffix = ''.join("_%s" % nameorobj(a) for a in args)
+        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(typetoarg.iteritems()))
         self.typetoarg = typetoarg
 
 class BaseFunction:
@@ -194,9 +203,9 @@ class Lookup:
     def __call__(self, **typeargsupdate):
         typeargs = self.typeargs.copy()
         for k, v in typeargsupdate.iteritems():
-            if k not in nametotypeparam or nametotypeparam[k] not in self.typeparams:
+            if k not in nametoparam or nametoparam[k] not in self.typeparams:
                 raise Exception(k)
-            typeargs[nametotypeparam[k]] = v
+            typeargs[nametoparam[k]] = v
         if len(typeargs) < len(self.typeparams):
             return Lookup(self.basefunc, typeargs, self.typeparams)
         return self.basefunc.getvariant(Variant(typeargs))
@@ -213,7 +222,7 @@ class Turbo:
             else:
                 typeinfo = Scalar(thetype)
             self.nametotypeinfo[name] = typeinfo
-            if typeinfo.type in typeparamtoname:
+            if typeinfo.type in allparams:
                 self.typeparams.add(typeinfo.type)
 
     def __call__(self, pyfunc):
