@@ -220,14 +220,14 @@ def %(name)s(%(cparams)s):
             importlib.import_module(fqmodulename)
         return getattr(sys.modules[fqmodulename], functionname)
 
-class Lookup:
+class Partial:
 
     def __init__(self, basefunc, variant):
         self.basefunc = basefunc
         self.variant = variant
 
     def __getitem__(self, (param, arg)):
-        return Lookup(self.basefunc, self.variant.spinoff(param, arg))
+        return Partial(self.basefunc, self.variant.spinoff(param, arg))
 
     def res(self):
         return self.basefunc.getvariant(self.variant)
@@ -239,7 +239,7 @@ class turbo:
 
     def __init__(self, **nametotype):
         self.nametotypeinfo = {}
-        self.placeholders = set()
+        placeholders = set()
         for name, typespec in nametotype.iteritems():
             if list == type(typespec):
                 elementtypespec, = typespec
@@ -247,7 +247,8 @@ class turbo:
             else:
                 typeinfo = Scalar(typespec)
             self.nametotypeinfo[name] = typeinfo
-            self.placeholders.update(typeinfo.iterplaceholders())
+            placeholders.update(typeinfo.iterplaceholders())
+        self.variant = Variant(placeholders)
 
     def __call__(self, pyfunc):
-        return Lookup(BaseFunction(self.nametotypeinfo, pyfunc), Variant(self.placeholders))
+        return Partial(BaseFunction(self.nametotypeinfo, pyfunc), self.variant)
