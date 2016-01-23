@@ -77,7 +77,7 @@ class Array(Variable):
     def isparam(self):
         return False
 
-    def param(self, variant, name):
+    def cparam(self, variant, name):
         return "np.ndarray[np.%s_t] py_%s" % (self.typename(variant), name)
 
     def itercdefs(self, variant, name, isparam):
@@ -91,7 +91,7 @@ class Scalar(Variable):
     def isparam(self):
         return self.typespec in allparams
 
-    def param(self, variant, name):
+    def cparam(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
 
     def itercdefs(self, variant, name, isparam):
@@ -159,7 +159,7 @@ def %(name)s(%(params)s):
                 typeinfo = self.nametotypeinfo[name]
                 isparam = i < self.argcount
                 if isparam:
-                    params.append(typeinfo.param(variant, name))
+                    params.append(typeinfo.cparam(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
             defs = []
             consts = dict([name, self.nametotypeinfo[name].typename(variant)] for name in self.constnames)
