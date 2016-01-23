@@ -110,7 +110,7 @@ class Array(TypeSpec):
 class Scalar(TypeSpec):
 
     def ispotentialconst(self):
-        return self.typespec in allplaceholders
+        return self.typespec.isplaceholder
 
     def cparam(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
