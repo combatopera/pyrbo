@@ -104,6 +104,10 @@ class Array:
         else:
             yield "cdef np.%s_t* %s" % (elementtypename, name)
 
+    def iterinferred(self, accept, arg):
+        if self.elementtypespec in accept:
+            yield self.elementtypespec, Type(arg.dtype.type)
+
 class Scalar:
 
     def __init__(self, typespec):
@@ -120,6 +124,10 @@ class Scalar:
         if not isfuncparam:
             typename = self.typespec.resolvedarg(variant).typename()
             yield "cdef np.%s_t %s" % (typename, name)
+
+    def iterinferred(self, accept, arg):
+        if self.typespec in accept:
+            yield self.typespec, Type(type(arg))
 
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
@@ -142,9 +150,20 @@ class PartialVariant:
         return PartialVariant(self.placeholders, paramtoarg)
 
     def close(self):
-        if len(self.paramtoarg) < len(self.placeholders):
-            raise PartialFunctionException(sorted(self.placeholders - set(self.paramtoarg)))
-        return Variant(self.paramtoarg)
+        if len(self.paramtoarg) == len(self.placeholders):
+            return Variant(self.paramtoarg)
+        raise PartialFunctionException(sorted(p for p in self.placeholders if p not in self.paramtoarg))
+
+    def close2(self, basefunc, args):
+        if len(self.paramtoarg) == len(self.placeholders):
+            return Variant(self.paramtoarg)
+        unbound = set(p for p in self.placeholders if p not in self.paramtoarg)
+        paramtoarg = self.paramtoarg.copy()
+        for name, arg in zip(basefunc.varnames, args):
+            typespec = basefunc.nametotypespec[name]
+            for p, t in typespec.iterinferred(unbound, arg):
+                paramtoarg[p] = t
+        return Variant(paramtoarg)
 
 class Variant:
 
@@ -266,7 +285,7 @@ class Partial:
         return self.basefunc.getvariant(self.variant.close())
 
     def __call__(self, *args, **kwargs):
-        return self.basefunc.getvariant(self.variant.close())(*args, **kwargs)
+        return self.basefunc.getvariant(self.variant.close2(self.basefunc, args))(*args, **kwargs)
 
 class turbo:
 
