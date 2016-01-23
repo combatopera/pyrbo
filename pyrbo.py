@@ -114,7 +114,7 @@ import cython
 %(defs)s
 @cython.boundscheck(False)
 @cython.cdivision(True) # Don't check for divide-by-zero.
-def %(name)s(%(params)s):
+def %(name)s(%(cparams)s):
 %(code)s'''
     deftemplate = '''DEF %s = %r
 '''
@@ -153,13 +153,13 @@ def %(name)s(%(params)s):
         functionname = self.name + variant.suffix
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         if fqmodulename not in sys.modules:
-            params = []
+            cparams = []
             cdefs = []
             for i, name in enumerate(self.varnames):
                 typeinfo = self.nametotypeinfo[name]
                 isparam = i < self.argcount
                 if isparam:
-                    params.append(typeinfo.cparam(variant, name))
+                    cparams.append(typeinfo.cparam(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isparam))
             defs = []
             consts = dict([name, self.nametotypeinfo[name].typename(variant)] for name in self.constnames)
@@ -171,7 +171,7 @@ def %(name)s(%(params)s):
             text = self.template % dict(
                 defs = ''.join(defs),
                 name = functionname,
-                params = ', '.join(params),
+                cparams = ', '.join(cparams),
                 code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
             )
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
