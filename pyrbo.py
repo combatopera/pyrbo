@@ -32,7 +32,7 @@ def pyxinstall():
 pyxinstall()
 del pyxinstall
 
-class Placeholder:
+class Placeholder(object):
 
     isplaceholder = True
 
@@ -54,8 +54,7 @@ class Placeholder:
     def resolvedarg(self, variant):
         return variant[self]
 
-allplaceholders = set(Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
-globals().update([p.name, p] for p in allplaceholders)
+globals().update([p.name, p] for p in (Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1)))
 
 class Type:
 
@@ -79,7 +78,7 @@ class Obj:
         return self.o
 
 def wraptype(t):
-    return t if t in allplaceholders else Type(t)
+    return t if Placeholder == type(t) else Type(t)
 
 class TypeSpec:
 
