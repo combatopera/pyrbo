@@ -40,7 +40,7 @@ class TestValueArg(unittest.TestCase):
         f = arrayof[X, 100]
         try:
             f.res()
-            self.fail("Expected import error.")
+            self.fail("Expected bad arg.")
         except BadArgException, e:
             self.assertEqual((100,), e.args)
 
