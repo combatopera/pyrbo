@@ -52,7 +52,7 @@ class Placeholder(object):
         return self.name # Just import it.
 
     def resolvedarg(self, variant):
-        return variant[self]
+        return variant.paramtoarg[self]
 
 globals().update([p.name, p] for p in (Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1)))
 
@@ -128,11 +128,9 @@ class NoSuchVariableException(Exception): pass
 
 class PartialFunctionException(Exception): pass
 
-class Variant:
+class PartialVariant:
 
     def __init__(self, placeholders, paramtoarg = {}):
-        if len(paramtoarg) == len(placeholders):
-            self.suffix = ''.join("_%s" % a.nameorobj() for _, a in sorted(paramtoarg.iteritems()))
         self.placeholders = placeholders
         self.paramtoarg = paramtoarg
 
@@ -141,16 +139,18 @@ class Variant:
             raise Exception(param)
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
-        return Variant(self.placeholders, paramtoarg)
+        return PartialVariant(self.placeholders, paramtoarg)
 
-    def getsuffix(self):
-        try:
-            return self.suffix
-        except AttributeError:
+    def close(self):
+        if len(self.paramtoarg) < len(self.placeholders):
             raise PartialFunctionException(sorted(self.placeholders - set(self.paramtoarg)))
+        return Variant(self.paramtoarg)
 
-    def __getitem__(self, param):
-        return self.paramtoarg[param]
+class Variant:
+
+    def __init__(self, paramtoarg):
+        self.suffix = ''.join("_%s" % a.nameorobj() for _, a in sorted(paramtoarg.iteritems()))
+        self.paramtoarg = paramtoarg
 
 class BaseFunction:
 
@@ -198,14 +198,14 @@ def %(name)s(%(cparams)s):
         self.variants = {}
 
     def getvariant(self, variant):
-        suffix = variant.getsuffix()
         try:
-            return self.variants[suffix]
+            return self.variants[variant.suffix]
         except KeyError:
-            self.variants[suffix] = f = self.getvariantimpl(self.name + suffix, variant)
+            self.variants[variant.suffix] = f = self.getvariantimpl(variant)
             return f
 
-    def getvariantimpl(self, functionname, variant):
+    def getvariantimpl(self, variant):
+        functionname = self.name + variant.suffix
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         if fqmodulename not in sys.modules:
             cparams = []
@@ -263,10 +263,10 @@ class Partial:
         return Partial(self.basefunc, self.variant.spinoff(param, arg))
 
     def res(self):
-        return self.basefunc.getvariant(self.variant)
+        return self.basefunc.getvariant(self.variant.close())
 
     def __call__(self, *args, **kwargs):
-        return self.res()(*args, **kwargs)
+        return self.basefunc.getvariant(self.variant.close())(*args, **kwargs)
 
 class turbo:
 
@@ -285,7 +285,7 @@ class turbo:
             else:
                 typespec = Scalar(wrap(typespec))
             self.nametotypespec[name] = typespec
-        self.variant = Variant(placeholders)
+        self.variant = PartialVariant(placeholders)
 
     def __call__(self, pyfunc):
         return Partial(BaseFunction(self.nametotypespec, pyfunc), self.variant)
