@@ -224,11 +224,10 @@ class Lookup:
         self.variant = variant
         self.placeholders = placeholders
 
-    def __getitem__(self, entry):
-        param = entry[0]
+    def __getitem__(self, (param, arg)):
         if param not in self.placeholders:
             raise Exception(param)
-        return Lookup(self.basefunc, self.variant.spinoff(param, entry[1]), self.placeholders)
+        return Lookup(self.basefunc, self.variant.spinoff(param, arg), self.placeholders)
 
     def res(self):
         return self.basefunc.getvariant(self.variant)
