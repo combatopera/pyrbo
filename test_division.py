@@ -39,10 +39,10 @@ def turbofloor(x, y):
 class TestDivision(unittest.TestCase):
 
     def test_floats(self):
-        for truediv in pytrue, turbotrue(T = np.float32):
+        for truediv in pytrue, turbotrue[T, np.float32]:
             self.assertEqual(1.5, truediv(4.5, 3))
             self.assertEqual(-1.5, truediv(-4.5, 3))
-        for floordiv in pyfloor, turbofloor(T = np.float32):
+        for floordiv in pyfloor, turbofloor[T, np.float32]:
             self.assertEqual(1, floordiv(4.5, 3))
             self.assertEqual(-2, floordiv(-4.5, 3))
 
@@ -51,14 +51,14 @@ class TestDivision(unittest.TestCase):
         self.assertEqual(1.5, pytrue(3, 2))
         self.assertEqual(-1.5, pytrue(-3, 2))
         # turbo function does round-to-zero:
-        self.assertEqual(1, turbotrue(T = np.int32)(3, 2))
-        self.assertEqual(-1, turbotrue(T = np.int32)(-3, 2))
+        self.assertEqual(1, turbotrue[T, np.int32](3, 2))
+        self.assertEqual(-1, turbotrue[T, np.int32](-3, 2))
         # Native function same as for floats:
         self.assertEqual(1, pyfloor(3, 2))
         self.assertEqual(-2, pyfloor(-3, 2))
         # turbo function does round-to-zero:
-        self.assertEqual(1, turbofloor(T = np.int32)(3, 2))
-        self.assertEqual(-1, turbofloor(T = np.int32)(-3, 2))
+        self.assertEqual(1, turbofloor[T, np.int32](3, 2))
+        self.assertEqual(-1, turbofloor[T, np.int32](-3, 2))
 
 if '__main__' == __name__:
     unittest.main()

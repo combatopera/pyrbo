@@ -46,6 +46,9 @@ class Param:
     def __cmp__(self, that):
         return cmp(self.name, that.name)
 
+    def __repr__(self):
+        return self.name # Just import it.
+
 allparams = set(Param(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
 nametoparam = dict([p.name, p] for p in allparams)
 globals().update(nametoparam)
@@ -100,10 +103,19 @@ class Scalar(Variable):
 
 class NoSuchVariableException(Exception): pass
 
-class Variant(dict):
+class Variant:
 
-    def suffix(self):
-        return ''.join("_%s" % nameorobj(a) for _, a in sorted(self.iteritems()))
+    def __init__(self, paramtoarg):
+        self.paramtoarg = paramtoarg
+        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(paramtoarg.iteritems()))
+
+    def spinoff(self, param, arg):
+        paramtoarg = self.paramtoarg.copy()
+        paramtoarg[param] = arg
+        return Variant(paramtoarg)
+
+    def __getitem__(self, param):
+        return self.paramtoarg[param]
 
 class BaseFunction:
 
@@ -148,9 +160,17 @@ def %(name)s(%(cparams)s):
         self.bodyindent, self.body = self.getbody(pyfunc)
         self.argcount = pyfunc.func_code.co_argcount
         self.nametotypeinfo = nametotypeinfo
+        self.variants = {}
 
     def getvariant(self, variant):
-        functionname = self.name + variant.suffix()
+        try:
+            return self.variants[variant.suffix]
+        except KeyError:
+            self.variants[variant.suffix] = f = self.getvariantimpl(variant)
+            return f
+
+    def getvariantimpl(self, variant):
+        functionname = self.name + variant.suffix
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         if fqmodulename not in sys.modules:
             cparams = []
@@ -204,15 +224,17 @@ class Lookup:
         self.variant = variant
         self.placeholders = placeholders
 
-    def __call__(self, **typeargsupdate):
-        variant = Variant(self.variant)
-        for k, v in typeargsupdate.iteritems():
-            if k not in nametoparam or nametoparam[k] not in self.placeholders:
-                raise Exception(k)
-            variant[nametoparam[k]] = v
-        if len(variant) < len(self.placeholders):
-            return Lookup(self.basefunc, variant, self.placeholders)
-        return self.basefunc.getvariant(variant)
+    def __getitem__(self, entry):
+        param = entry[0]
+        if param not in self.placeholders:
+            raise Exception(param)
+        return Lookup(self.basefunc, self.variant.spinoff(param, entry[1]), self.placeholders)
+
+    def res(self):
+        return self.basefunc.getvariant(self.variant)
+
+    def __call__(self, *args, **kwargs):
+        return self.res()(*args, **kwargs)
 
 class turbo:
 
@@ -230,7 +252,4 @@ class turbo:
 
     def __call__(self, pyfunc):
         basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
-        variant = Variant()
-        if len(variant) < len(self.placeholders):
-            return Lookup(basefunc, variant, self.placeholders)
-        return basefunc.getvariant(variant)
+        return Lookup(basefunc, Variant({}), self.placeholders)

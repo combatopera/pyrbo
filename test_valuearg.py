@@ -34,11 +34,12 @@ def arrayof(v):
 class TestValueArg(unittest.TestCase):
 
     def test_works(self):
-        self.assertEqual((-5, 6), turbotuple(T = np.int32, Y = 6)(-5))
+        self.assertEqual((-5, 6), turbotuple[T, np.int32][Y, 6](-5))
 
     def test_arrayof(self):
+        f = arrayof[X, 100]
         try:
-            arrayof(X = 100)
+            f.res()
             self.fail("Expected import error.")
         except ImportError:
             pass
