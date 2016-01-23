@@ -78,10 +78,13 @@ class Obj:
     def nameorobj(self):
         return self.o
 
+def wraptype(t):
+    return t if t in allplaceholders else Type(t)
+
 class TypeSpec:
 
     def __init__(self, typespec):
-        self.typespec = typespec if typespec in allplaceholders else Type(typespec)
+        self.typespec = typespec
 
     def iterplaceholders(self):
         if self.typespec.isplaceholder:
@@ -262,9 +265,9 @@ class turbo:
         for name, typespec in nametotypespec.iteritems():
             if list == type(typespec):
                 elementtypespec, = typespec
-                typespec = Array(elementtypespec)
+                typespec = Array(wraptype(elementtypespec))
             else:
-                typespec = Scalar(typespec)
+                typespec = Scalar(wraptype(typespec))
             self.nametotypespec[name] = typespec
             placeholders.update(typespec.iterplaceholders())
         self.variant = Variant(placeholders)
