@@ -67,7 +67,7 @@ class Variable:
 
     def typename(self, variant):
         if self.typespec in allparams:
-            a = variant.placeholdertovalue[self.typespec]
+            a = variant[self.typespec]
         else:
             a = self.typespec
         return nameorobj(a)
@@ -100,11 +100,10 @@ class Scalar(Variable):
 
 class NoSuchVariableException(Exception): pass
 
-class Variant:
+class Variant(dict):
 
-    def __init__(self, placeholdertovalue):
-        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(placeholdertovalue.iteritems()))
-        self.placeholdertovalue = placeholdertovalue
+    def suffix(self):
+        return ''.join("_%s" % nameorobj(a) for _, a in sorted(self.iteritems()))
 
 class BaseFunction:
 
@@ -151,7 +150,7 @@ def %(name)s(%(cparams)s):
         self.nametotypeinfo = nametotypeinfo
 
     def getvariant(self, variant):
-        functionname = self.name + variant.suffix
+        functionname = self.name + variant.suffix()
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         if fqmodulename not in sys.modules:
             cparams = []
@@ -200,20 +199,20 @@ def %(name)s(%(cparams)s):
 
 class Lookup:
 
-    def __init__(self, basefunc, placeholdertovalue, placeholders):
+    def __init__(self, basefunc, variant, placeholders):
         self.basefunc = basefunc
-        self.placeholdertovalue = placeholdertovalue
+        self.variant = variant
         self.placeholders = placeholders
 
     def __call__(self, **typeargsupdate):
-        placeholdertovalue = self.placeholdertovalue.copy()
+        variant = Variant(self.variant)
         for k, v in typeargsupdate.iteritems():
             if k not in nametoparam or nametoparam[k] not in self.placeholders:
                 raise Exception(k)
-            placeholdertovalue[nametoparam[k]] = v
-        if len(placeholdertovalue) < len(self.placeholders):
-            return Lookup(self.basefunc, placeholdertovalue, self.placeholders)
-        return self.basefunc.getvariant(Variant(placeholdertovalue))
+            variant[nametoparam[k]] = v
+        if len(variant) < len(self.placeholders):
+            return Lookup(self.basefunc, variant, self.placeholders)
+        return self.basefunc.getvariant(variant)
 
 class turbo:
 
@@ -231,6 +230,7 @@ class turbo:
 
     def __call__(self, pyfunc):
         basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
-        if self.placeholders:
-            return Lookup(basefunc, {}, self.placeholders)
-        return basefunc.getvariant(Variant({}))
+        variant = Variant()
+        if len(variant) < len(self.placeholders):
+            return Lookup(basefunc, variant, self.placeholders)
+        return basefunc.getvariant(variant)
