@@ -105,14 +105,17 @@ class NoSuchVariableException(Exception): pass
 
 class Variant:
 
-    def __init__(self, paramtoarg):
-        self.paramtoarg = paramtoarg
+    def __init__(self, placeholders, paramtoarg = {}):
         self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(paramtoarg.iteritems()))
+        self.placeholders = placeholders
+        self.paramtoarg = paramtoarg
 
     def spinoff(self, param, arg):
+        if param not in self.placeholders:
+            raise Exception(param)
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
-        return Variant(paramtoarg)
+        return Variant(self.placeholders, paramtoarg)
 
     def __getitem__(self, param):
         return self.paramtoarg[param]
@@ -219,15 +222,12 @@ def %(name)s(%(cparams)s):
 
 class Lookup:
 
-    def __init__(self, basefunc, variant, placeholders):
+    def __init__(self, basefunc, variant):
         self.basefunc = basefunc
         self.variant = variant
-        self.placeholders = placeholders
 
     def __getitem__(self, (param, arg)):
-        if param not in self.placeholders:
-            raise Exception(param)
-        return Lookup(self.basefunc, self.variant.spinoff(param, arg), self.placeholders)
+        return Lookup(self.basefunc, self.variant.spinoff(param, arg))
 
     def res(self):
         return self.basefunc.getvariant(self.variant)
@@ -250,5 +250,4 @@ class turbo:
             self.placeholders.update(typeinfo.iterplaceholders())
 
     def __call__(self, pyfunc):
-        basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
-        return Lookup(basefunc, Variant({}), self.placeholders)
+        return Lookup(BaseFunction(self.nametotypeinfo, pyfunc), Variant(self.placeholders))
