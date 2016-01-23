@@ -236,10 +236,10 @@ class Partial:
 
 class turbo:
 
-    def __init__(self, **nametotype):
+    def __init__(self, **nametotypespec):
         self.nametotypeinfo = {}
         placeholders = set()
-        for name, typespec in nametotype.iteritems():
+        for name, typespec in nametotypespec.iteritems():
             if list == type(typespec):
                 elementtypespec, = typespec
                 typeinfo = Array(elementtypespec)
