@@ -97,9 +97,6 @@ class TypeSpec:
         if self.typespec.isplaceholder:
             yield self.typespec
 
-    def resolvedarg(self, variant):
-        return self.typespec.resolvedarg(variant)
-
 class Array(TypeSpec):
 
     def ispotentialconst(self):
@@ -129,6 +126,9 @@ class Scalar(TypeSpec):
         if not isfuncparam:
             typename = self.typespec.resolvedarg(variant).typename()
             yield "cdef np.%s_t %s" % (typename, name)
+
+    def resolvedobj(self, variant):
+        return self.typespec.resolvedarg(variant).o
 
 class NoSuchVariableException(Exception): pass
 
@@ -214,7 +214,7 @@ def %(name)s(%(cparams)s):
                     cparams.append(typespec.cparam(variant, name))
                 cdefs.extend(typespec.itercdefs(variant, name, isfuncparam))
             defs = []
-            consts = dict([name, self.nametotypespec[name].resolvedarg(variant).o] for name in self.constnames)
+            consts = dict([name, self.nametotypespec[name].resolvedobj(variant)] for name in self.constnames)
             for item in consts.iteritems():
                 defs.append(self.deftemplate % item)
             body = []
