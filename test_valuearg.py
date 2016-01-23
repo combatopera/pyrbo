@@ -19,7 +19,7 @@
 
 import numpy as np
 import unittest
-from pyrbo import turbo, T, Y
+from pyrbo import turbo, T, X, Y
 
 y = None
 
@@ -27,10 +27,21 @@ y = None
 def turbotuple(x):
     return x, y
 
+@turbo(v = [X])
+def arrayof(v):
+    pass
+
 class TestValueArg(unittest.TestCase):
 
     def test_works(self):
         self.assertEqual((-5, 6), turbotuple(T = np.int32, Y = 6)(-5))
+
+    def test_arrayof(self):
+        try:
+            arrayof(X = 100)
+            self.fail("Expected import error.")
+        except ImportError:
+            pass
 
 if '__main__' == __name__:
     unittest.main()
