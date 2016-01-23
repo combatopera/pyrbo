@@ -68,12 +68,11 @@ class Variable:
         if self.typespec in allparams:
             yield self.typespec
 
+    def resolvedspec(self, variant):
+        return variant[self.typespec] if self.typespec in allparams else self.typespec
+
     def typename(self, variant):
-        if self.typespec in allparams:
-            a = variant[self.typespec]
-        else:
-            a = self.typespec
-        return nameorobj(a)
+        return nameorobj(self.resolvedspec(variant))
 
 class Array(Variable):
 
@@ -185,7 +184,7 @@ def %(name)s(%(cparams)s):
                     cparams.append(typeinfo.cparam(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isfuncparam))
             defs = []
-            consts = dict([name, self.nametotypeinfo[name].typename(variant)] for name in self.constnames)
+            consts = dict([name, self.nametotypeinfo[name].resolvedspec(variant)] for name in self.constnames)
             for item in consts.iteritems():
                 defs.append(self.deftemplate % item)
             body = []
