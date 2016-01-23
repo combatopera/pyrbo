@@ -50,7 +50,7 @@ class Placeholder:
         return self.name # Just import it.
 
 allplaceholders = set(Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
-globals().update(dict([p.name, p] for p in allplaceholders))
+globals().update([p.name, p] for p in allplaceholders)
 
 def nameorobj(a):
     try:
