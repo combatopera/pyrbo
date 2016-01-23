@@ -59,7 +59,7 @@ def nameorobj(a):
     except AttributeError:
         return a
 
-class Variable:
+class TypeSpec:
 
     def __init__(self, typespec):
         self.typespec = typespec
@@ -74,7 +74,7 @@ class Variable:
     def typename(self, variant):
         return nameorobj(self.resolvedspec(variant))
 
-class Array(Variable):
+class Array(TypeSpec):
 
     def ispotentialconst(self):
         return False
@@ -88,7 +88,7 @@ class Array(Variable):
         else:
             yield "cdef np.%s_t* %s" % (self.typename(variant), name)
 
-class Scalar(Variable):
+class Scalar(TypeSpec):
 
     def ispotentialconst(self):
         return self.typespec in allparams
