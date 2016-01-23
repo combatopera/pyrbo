@@ -19,7 +19,7 @@
 
 import numpy as np
 import unittest
-from pyrbo import turbo, T, X, Y
+from pyrbo import turbo, T, X, Y, BadArgException
 
 y = None
 
@@ -41,8 +41,8 @@ class TestValueArg(unittest.TestCase):
         try:
             f.res()
             self.fail("Expected import error.")
-        except ImportError:
-            pass
+        except BadArgException, e:
+            self.assertEqual((100,), e.args)
 
 if '__main__' == __name__:
     unittest.main()

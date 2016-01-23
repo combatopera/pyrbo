@@ -66,13 +66,21 @@ class Type:
     def resolvedarg(self, variant):
         return self
 
-    def nameorobj(self):
+    def typename(self):
         return self.t.__name__
+
+    def nameorobj(self):
+        return self.typename()
+
+class BadArgException(Exception): pass
 
 class Obj:
 
     def __init__(self, o):
         self.o = o
+
+    def typename(self):
+        raise BadArgException(self.o)
 
     def nameorobj(self):
         return self.o
@@ -92,22 +100,21 @@ class TypeSpec:
     def resolvedarg(self, variant):
         return self.typespec.resolvedarg(variant)
 
-    def typename(self, variant):
-        return self.typespec.resolvedarg(variant).nameorobj()
-
 class Array(TypeSpec):
 
     def ispotentialconst(self):
         return False
 
     def cparam(self, variant, name):
-        return "np.ndarray[np.%s_t] py_%s" % (self.typename(variant), name)
+        elementtypename = self.typespec.resolvedarg(variant).typename()
+        return "np.ndarray[np.%s_t] py_%s" % (elementtypename, name)
 
     def itercdefs(self, variant, name, isfuncparam):
+        elementtypename = self.typespec.resolvedarg(variant).typename()
         if isfuncparam:
-            yield "cdef np.%s_t* %s = &py_%s[0]" % (self.typename(variant), name, name)
+            yield "cdef np.%s_t* %s = &py_%s[0]" % (elementtypename, name, name)
         else:
-            yield "cdef np.%s_t* %s" % (self.typename(variant), name)
+            yield "cdef np.%s_t* %s" % (elementtypename, name)
 
 class Scalar(TypeSpec):
 
@@ -115,11 +122,13 @@ class Scalar(TypeSpec):
         return self.typespec.isplaceholder
 
     def cparam(self, variant, name):
-        return "np.%s_t %s" % (self.typename(variant), name)
+        typename = self.typespec.resolvedarg(variant).typename()
+        return "np.%s_t %s" % (typename, name)
 
     def itercdefs(self, variant, name, isfuncparam):
         if not isfuncparam:
-            yield "cdef np.%s_t %s" % (self.typename(variant), name)
+            typename = self.typespec.resolvedarg(variant).typename()
+            yield "cdef np.%s_t %s" % (typename, name)
 
 class NoSuchVariableException(Exception): pass
 
