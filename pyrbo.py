@@ -66,9 +66,9 @@ class Variable:
             yield self.typespec
 
     def typename(self, variant):
-        try:
-            a = variant.typetoarg[self.typespec]
-        except KeyError:
+        if self.typespec in allparams:
+            a = variant.placeholdertovalue[self.typespec]
+        else:
             a = self.typespec
         return nameorobj(a)
 
@@ -102,9 +102,9 @@ class NoSuchVariableException(Exception): pass
 
 class Variant:
 
-    def __init__(self, typetoarg):
-        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(typetoarg.iteritems()))
-        self.typetoarg = typetoarg
+    def __init__(self, placeholdertovalue):
+        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(placeholdertovalue.iteritems()))
+        self.placeholdertovalue = placeholdertovalue
 
 class BaseFunction:
 
@@ -200,20 +200,20 @@ def %(name)s(%(cparams)s):
 
 class Lookup:
 
-    def __init__(self, basefunc, typeargs, placeholders):
+    def __init__(self, basefunc, placeholdertovalue, placeholders):
         self.basefunc = basefunc
-        self.typeargs = typeargs
+        self.placeholdertovalue = placeholdertovalue
         self.placeholders = placeholders
 
     def __call__(self, **typeargsupdate):
-        typeargs = self.typeargs.copy()
+        placeholdertovalue = self.placeholdertovalue.copy()
         for k, v in typeargsupdate.iteritems():
             if k not in nametoparam or nametoparam[k] not in self.placeholders:
                 raise Exception(k)
-            typeargs[nametoparam[k]] = v
-        if len(typeargs) < len(self.placeholders):
-            return Lookup(self.basefunc, typeargs, self.placeholders)
-        return self.basefunc.getvariant(Variant(typeargs))
+            placeholdertovalue[nametoparam[k]] = v
+        if len(placeholdertovalue) < len(self.placeholders):
+            return Lookup(self.basefunc, placeholdertovalue, self.placeholders)
+        return self.basefunc.getvariant(Variant(placeholdertovalue))
 
 class turbo:
 
