@@ -32,7 +32,7 @@ def pyxinstall():
 pyxinstall()
 del pyxinstall
 
-class Param:
+class Placeholder:
 
     def __init__(self, name):
         self.name = name
@@ -49,9 +49,8 @@ class Param:
     def __repr__(self):
         return self.name # Just import it.
 
-allparams = set(Param(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
-nametoparam = dict([p.name, p] for p in allparams)
-globals().update(nametoparam)
+allplaceholders = set(Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
+globals().update(dict([p.name, p] for p in allplaceholders))
 
 def nameorobj(a):
     try:
@@ -65,11 +64,11 @@ class TypeSpec:
         self.typespec = typespec
 
     def iterplaceholders(self):
-        if self.typespec in allparams:
+        if self.typespec in allplaceholders:
             yield self.typespec
 
     def resolvedspec(self, variant):
-        return variant[self.typespec] if self.typespec in allparams else self.typespec
+        return variant[self.typespec] if self.typespec in allplaceholders else self.typespec
 
     def typename(self, variant):
         return nameorobj(self.resolvedspec(variant))
@@ -91,7 +90,7 @@ class Array(TypeSpec):
 class Scalar(TypeSpec):
 
     def ispotentialconst(self):
-        return self.typespec in allparams
+        return self.typespec in allplaceholders
 
     def cparam(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
