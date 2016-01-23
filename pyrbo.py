@@ -34,6 +34,8 @@ del pyxinstall
 
 class Placeholder:
 
+    isplaceholder = True
+
     def __init__(self, name):
         self.name = name
 
@@ -49,29 +51,47 @@ class Placeholder:
     def __repr__(self):
         return self.name # Just import it.
 
+    def resolvedspec(self, variant):
+        return variant[self]
+
 allplaceholders = set(Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
 globals().update([p.name, p] for p in allplaceholders)
 
-def nameorobj(a):
-    try:
-        return a.__name__
-    except AttributeError:
-        return a
+class Type:
+
+    isplaceholder = False
+
+    def __init__(self, t):
+        self.t = t
+
+    def resolvedspec(self, variant):
+        return self
+
+    def nameorobj(self):
+        return self.t.__name__
+
+class Obj:
+
+    def __init__(self, o):
+        self.o = o
+
+    def nameorobj(self):
+        return self.o
 
 class TypeSpec:
 
     def __init__(self, typespec):
-        self.typespec = typespec
+        self.typespec = typespec if typespec in allplaceholders else Type(typespec)
 
     def iterplaceholders(self):
-        if self.typespec in allplaceholders:
+        if self.typespec.isplaceholder:
             yield self.typespec
 
     def resolvedspec(self, variant):
-        return variant[self.typespec] if self.typespec in allplaceholders else self.typespec
+        return self.typespec.resolvedspec(variant)
 
     def typename(self, variant):
-        return nameorobj(self.resolvedspec(variant))
+        return self.typespec.resolvedspec(variant).nameorobj()
 
 class Array(TypeSpec):
 
@@ -104,7 +124,7 @@ class NoSuchVariableException(Exception): pass
 class Variant:
 
     def __init__(self, placeholders, paramtoarg = {}):
-        self.suffix = ''.join("_%s" % nameorobj(a) for _, a in sorted(paramtoarg.iteritems()))
+        self.suffix = ''.join("_%s" % a.nameorobj() for _, a in sorted(paramtoarg.iteritems()))
         self.placeholders = placeholders
         self.paramtoarg = paramtoarg
 
@@ -183,7 +203,7 @@ def %(name)s(%(cparams)s):
                     cparams.append(typeinfo.cparam(variant, name))
                 cdefs.extend(typeinfo.itercdefs(variant, name, isfuncparam))
             defs = []
-            consts = dict([name, self.nametotypeinfo[name].resolvedspec(variant)] for name in self.constnames)
+            consts = dict([name, self.nametotypeinfo[name].resolvedspec(variant).o] for name in self.constnames)
             for item in consts.iteritems():
                 defs.append(self.deftemplate % item)
             body = []
@@ -225,6 +245,7 @@ class Partial:
         self.variant = variant
 
     def __getitem__(self, (param, arg)):
+        arg = Type(arg) if type == type(arg) else Obj(arg)
         return Partial(self.basefunc, self.variant.spinoff(param, arg))
 
     def res(self):
