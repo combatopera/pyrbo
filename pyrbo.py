@@ -61,6 +61,10 @@ class Variable:
     def __init__(self, typespec):
         self.typespec = typespec
 
+    def iterplaceholders(self):
+        if self.typespec in allparams:
+            yield self.typespec
+
     def typename(self, variant):
         try:
             a = variant.typetoarg[self.typespec]
@@ -222,8 +226,7 @@ class turbo:
             else:
                 typeinfo = Scalar(typespec)
             self.nametotypeinfo[name] = typeinfo
-            if typeinfo.typespec in allparams:
-                self.placeholders.add(typeinfo.typespec)
+            self.placeholders.update(typeinfo.iterplaceholders())
 
     def __call__(self, pyfunc):
         basefunc = BaseFunction(self.nametotypeinfo, pyfunc)
