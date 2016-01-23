@@ -51,7 +51,7 @@ class Placeholder:
     def __repr__(self):
         return self.name # Just import it.
 
-    def resolvedspec(self, variant):
+    def resolvedarg(self, variant):
         return variant[self]
 
 allplaceholders = set(Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1))
@@ -64,7 +64,7 @@ class Type:
     def __init__(self, t):
         self.t = t
 
-    def resolvedspec(self, variant):
+    def resolvedarg(self, variant):
         return self
 
     def nameorobj(self):
@@ -90,11 +90,11 @@ class TypeSpec:
         if self.typespec.isplaceholder:
             yield self.typespec
 
-    def resolvedspec(self, variant):
-        return self.typespec.resolvedspec(variant)
+    def resolvedarg(self, variant):
+        return self.typespec.resolvedarg(variant)
 
     def typename(self, variant):
-        return self.typespec.resolvedspec(variant).nameorobj()
+        return self.typespec.resolvedarg(variant).nameorobj()
 
 class Array(TypeSpec):
 
@@ -206,7 +206,7 @@ def %(name)s(%(cparams)s):
                     cparams.append(typespec.cparam(variant, name))
                 cdefs.extend(typespec.itercdefs(variant, name, isfuncparam))
             defs = []
-            consts = dict([name, self.nametotypespec[name].resolvedspec(variant).o] for name in self.constnames)
+            consts = dict([name, self.nametotypespec[name].resolvedarg(variant).o] for name in self.constnames)
             for item in consts.iteritems():
                 defs.append(self.deftemplate % item)
             body = []
