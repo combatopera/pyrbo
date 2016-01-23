@@ -166,21 +166,21 @@ def %(name)s(%(cparams)s):
             i += 1
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
-    def __init__(self, nametotypeinfo, pyfunc):
+    def __init__(self, nametotypespec, pyfunc):
         # The varnames are the locals including params:
         self.varnames = [n for n in pyfunc.func_code.co_varnames if 'UNROLL' != n]
         self.constnames = []
         varnames = set(self.varnames)
-        for name, typeinfo in nametotypeinfo.iteritems():
+        for name, typespec in nametotypespec.iteritems():
             if name not in varnames:
-                if not typeinfo.ispotentialconst():
+                if not typespec.ispotentialconst():
                     raise NoSuchVariableException(name)
                 self.constnames.append(name) # We'll make a DEF for it.
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
         self.argcount = pyfunc.func_code.co_argcount
-        self.nametotypeinfo = nametotypeinfo
+        self.nametotypespec = nametotypespec
         self.variants = {}
 
     def getvariant(self, variant):
@@ -197,13 +197,13 @@ def %(name)s(%(cparams)s):
             cparams = []
             cdefs = []
             for i, name in enumerate(self.varnames):
-                typeinfo = self.nametotypeinfo[name]
+                typespec = self.nametotypespec[name]
                 isfuncparam = i < self.argcount
                 if isfuncparam:
-                    cparams.append(typeinfo.cparam(variant, name))
-                cdefs.extend(typeinfo.itercdefs(variant, name, isfuncparam))
+                    cparams.append(typespec.cparam(variant, name))
+                cdefs.extend(typespec.itercdefs(variant, name, isfuncparam))
             defs = []
-            consts = dict([name, self.nametotypeinfo[name].resolvedspec(variant).o] for name in self.constnames)
+            consts = dict([name, self.nametotypespec[name].resolvedspec(variant).o] for name in self.constnames)
             for item in consts.iteritems():
                 defs.append(self.deftemplate % item)
             body = []
@@ -257,17 +257,17 @@ class Partial:
 class turbo:
 
     def __init__(self, **nametotypespec):
-        self.nametotypeinfo = {}
+        self.nametotypespec = {}
         placeholders = set()
         for name, typespec in nametotypespec.iteritems():
             if list == type(typespec):
                 elementtypespec, = typespec
-                typeinfo = Array(elementtypespec)
+                typespec = Array(elementtypespec)
             else:
-                typeinfo = Scalar(typespec)
-            self.nametotypeinfo[name] = typeinfo
-            placeholders.update(typeinfo.iterplaceholders())
+                typespec = Scalar(typespec)
+            self.nametotypespec[name] = typespec
+            placeholders.update(typespec.iterplaceholders())
         self.variant = Variant(placeholders)
 
     def __call__(self, pyfunc):
-        return Partial(BaseFunction(self.nametotypeinfo, pyfunc), self.variant)
+        return Partial(BaseFunction(self.nametotypespec, pyfunc), self.variant)
