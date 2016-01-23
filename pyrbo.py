@@ -85,35 +85,29 @@ class Obj:
     def nameorobj(self):
         return self.o
 
-def wraptype(t):
-    return t if Placeholder == type(t) else Type(t)
+class Array:
 
-class TypeSpec:
-
-    def __init__(self, typespec):
-        self.typespec = typespec
-
-    def iterplaceholders(self):
-        if self.typespec.isplaceholder:
-            yield self.typespec
-
-class Array(TypeSpec):
+    def __init__(self, elementtypespec):
+        self.elementtypespec = elementtypespec
 
     def ispotentialconst(self):
         return False
 
     def cparam(self, variant, name):
-        elementtypename = self.typespec.resolvedarg(variant).typename()
+        elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         return "np.ndarray[np.%s_t] py_%s" % (elementtypename, name)
 
     def itercdefs(self, variant, name, isfuncparam):
-        elementtypename = self.typespec.resolvedarg(variant).typename()
+        elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         if isfuncparam:
             yield "cdef np.%s_t* %s = &py_%s[0]" % (elementtypename, name, name)
         else:
             yield "cdef np.%s_t* %s" % (elementtypename, name)
 
-class Scalar(TypeSpec):
+class Scalar:
+
+    def __init__(self, typespec):
+        self.typespec = typespec
 
     def ispotentialconst(self):
         return self.typespec.isplaceholder
@@ -270,14 +264,18 @@ class turbo:
     def __init__(self, **nametotypespec):
         self.nametotypespec = {}
         placeholders = set()
+        def wrap(spec):
+            if Placeholder == type(spec):
+                placeholders.add(spec)
+                return spec
+            return Type(spec)
         for name, typespec in nametotypespec.iteritems():
             if list == type(typespec):
                 elementtypespec, = typespec
-                typespec = Array(wraptype(elementtypespec))
+                typespec = Array(wrap(elementtypespec))
             else:
-                typespec = Scalar(wraptype(typespec))
+                typespec = Scalar(wrap(typespec))
             self.nametotypespec[name] = typespec
-            placeholders.update(typespec.iterplaceholders())
         self.variant = Variant(placeholders)
 
     def __call__(self, pyfunc):
