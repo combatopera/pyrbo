@@ -74,7 +74,7 @@ class Variable:
 
 class Array(Variable):
 
-    def isparam(self):
+    def ispotentialconst(self):
         return False
 
     def cparam(self, variant, name):
@@ -88,7 +88,7 @@ class Array(Variable):
 
 class Scalar(Variable):
 
-    def isparam(self):
+    def ispotentialconst(self):
         return self.typespec in allparams
 
     def cparam(self, variant, name):
@@ -135,14 +135,15 @@ def %(name)s(%(cparams)s):
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
     def __init__(self, nametotypeinfo, pyfunc):
+        # The varnames are the locals including params:
         self.varnames = [n for n in pyfunc.func_code.co_varnames if 'UNROLL' != n]
         self.constnames = []
         varnames = set(self.varnames)
         for name, typeinfo in nametotypeinfo.iteritems():
             if name not in varnames:
-                if not typeinfo.isparam():
+                if not typeinfo.ispotentialconst():
                     raise NoSuchVariableException(name)
-                self.constnames.append(name)
+                self.constnames.append(name) # We'll make a DEF for it.
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
