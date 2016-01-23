@@ -32,12 +32,13 @@ def pyxinstall():
 pyxinstall()
 del pyxinstall
 
-typeparamtoindex = {}
-for i, name in enumerate(xrange(ord('T'), ord('Z') + 1)):
+typeparamtoname = {}
+nametotypeparam = {}
+for name in xrange(ord('T'), ord('Z') + 1):
     name = chr(name)
-    exec "class %s: pass" % name
-    typeparamtoindex[eval(name)] = i
-nametotypeparam = dict([t.__name__, t] for t in typeparamtoindex)
+    typeparam = object()
+    typeparamtoname[typeparam] = name
+    globals()[name] = nametotypeparam[name] = typeparam
 
 def nameorobj(a):
     try:
@@ -74,7 +75,7 @@ class Array(Variable):
 class Scalar(Variable):
 
     def isparam(self):
-        return self.type in typeparamtoindex
+        return self.type in typeparamtoname
 
     def param(self, variant, name):
         return "np.%s_t %s" % (self.typename(variant), name)
@@ -88,7 +89,7 @@ class NoSuchVariableException(Exception): pass
 class Variant:
 
     def __init__(self, typetoarg):
-        args = (a for _, a in sorted(typetoarg.iteritems(), key = lambda e: e[0].__name__))
+        args = (a for _, a in sorted(typetoarg.iteritems(), key = lambda e: typeparamtoname[e[0]]))
         self.suffix = ''.join("_%s" % nameorobj(a) for a in args)
         self.typetoarg = typetoarg
 
@@ -212,7 +213,7 @@ class Turbo:
             else:
                 typeinfo = Scalar(thetype)
             self.nametotypeinfo[name] = typeinfo
-            if typeinfo.type in typeparamtoindex:
+            if typeinfo.type in typeparamtoname:
                 self.typeparams.add(typeinfo.type)
 
     def __call__(self, pyfunc):
