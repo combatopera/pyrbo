@@ -136,6 +136,10 @@ class NoSuchVariableException(Exception): pass
 
 class PartialFunctionException(Exception): pass
 
+class NoSuchPlaceholderException(Exception): pass
+
+class AlreadyBoundException(Exception): pass
+
 class PartialVariant:
 
     def __init__(self, placeholders, paramtoarg = {}):
@@ -144,7 +148,9 @@ class PartialVariant:
 
     def spinoff(self, param, arg):
         if param not in self.placeholders:
-            raise Exception(param)
+            raise NoSuchPlaceholderException(param)
+        if param in self.paramtoarg:
+            raise AlreadyBoundException(param)
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
         return PartialVariant(self.placeholders, paramtoarg)
