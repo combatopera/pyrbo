@@ -19,7 +19,7 @@
 
 import numpy as np
 import unittest
-from pyrbo import turbo, T, U, X
+from pyrbo import turbo, T, U, X, AlreadyBoundException
 
 @turbo(x = [T], y = [U], n = np.uint32)
 def addxtoy(x, y, n):
@@ -48,13 +48,13 @@ class TestInfer(unittest.TestCase):
         self.assertEqual(11, add(5, 6))
 
     def test_failure(self):
-        x = np.arange(10, dtype = np.int32) # Won't agree with T.
-        y = np.arange(10, dtype = np.float32) # T will be float32.
+        x = np.arange(10, dtype = np.int32)
+        y = np.arange(10, dtype = np.float32)
         try:
             noinfer(x, y)
-            self.fail("Expected value error.")
-        except ValueError:
-            pass
+            self.fail("Expected already bound.")
+        except AlreadyBoundException, e:
+            self.assertEqual((T,), e.args)
 
 if '__main__' == __name__:
     unittest.main()
