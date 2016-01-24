@@ -303,9 +303,9 @@ class Partial:
     def __call__(self, *args, **kwargs):
         return self.basefunc.getvariant(self.variant.close2(self.basefunc, args))(*args, **kwargs)
 
-class turbo:
+class Turbo:
 
-    def __init__(self, **nametotypespec):
+    def __init__(self, nametotypespec):
         self.nametotypespec = {}
         placeholders = set()
         def wrap(spec):
@@ -324,3 +324,6 @@ class turbo:
 
     def __call__(self, pyfunc):
         return Partial(BaseFunction(self.nametotypespec, pyfunc), self.variant)
+
+def turbo(**nametotypespec):
+    return Turbo(nametotypespec)
