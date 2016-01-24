@@ -69,7 +69,7 @@ class Type:
     def typename(self):
         return self.t.__name__
 
-    def nameorobj(self):
+    def discriminator(self):
         return self.typename()
 
 class BadArgException(Exception): pass
@@ -82,8 +82,8 @@ class Obj:
     def typename(self):
         raise BadArgException(self.o)
 
-    def nameorobj(self):
-        return self.o
+    def discriminator(self):
+        return str(self.o)
 
 class Array:
 
@@ -174,7 +174,7 @@ class PartialVariant:
 class Variant:
 
     def __init__(self, paramtoarg):
-        self.suffix = ''.join("_%s" % a.nameorobj() for _, a in sorted(paramtoarg.iteritems()))
+        self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.iteritems()))
         self.paramtoarg = paramtoarg
 
 class BaseFunction:
