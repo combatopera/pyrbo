@@ -39,14 +39,11 @@ class Placeholder(object):
     def __init__(self, name):
         self.name = name
 
-    def __eq__(self, that):
-        return self.name == that.name
+    def __cmp__(self, that):
+        return cmp(self.name, that.name)
 
     def __hash__(self):
         return hash(self.name)
-
-    def __cmp__(self, that):
-        return cmp(self.name, that.name)
 
     def __repr__(self):
         return self.name # Just import it.
@@ -71,6 +68,15 @@ class Type:
 
     def discriminator(self):
         return self.typename()
+
+    def __cmp__(self, that):
+        return cmp(self.t, that.t)
+
+    def __hash__(self):
+        return hash(self.t)
+
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__.__name__, self.t)
 
 class BadArgException(Exception): pass
 
@@ -166,8 +172,9 @@ class PartialVariant:
         unbound = set(p for p in self.placeholders if p not in self.paramtoarg)
         paramtoarg = self.paramtoarg.copy()
         for name, arg in zip(basefunc.varnames, args):
-            typespec = basefunc.nametotypespec[name]
-            for p, t in typespec.iterinferred(unbound, arg):
+            for p, t in basefunc.nametotypespec[name].iterinferred(unbound, arg):
+                if p in paramtoarg and paramtoarg[p] != t:
+                    raise AlreadyBoundException(p)
                 paramtoarg[p] = t
         return Variant(paramtoarg)
 
