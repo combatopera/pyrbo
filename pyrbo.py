@@ -91,6 +91,9 @@ class Obj:
     def discriminator(self):
         return str(self.o)
 
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__.__name__, self.o)
+
 class Array:
 
     def __init__(self, elementtypespec):
