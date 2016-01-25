@@ -154,6 +154,9 @@ class Composite:
             typename = Type(fieldtype).typename()
             yield "cdef np.%s_t %s_%s = %s.%s" % (typename, name, field, name, field)
 
+    def iterinferred(self, accept, arg):
+        return (_ for _ in ())
+
 class NoSuchVariableException(Exception): pass
 
 class PartialFunctionException(Exception): pass
