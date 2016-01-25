@@ -134,6 +134,10 @@ class Scalar:
             typename = self.typespec.resolvedarg(variant).typename()
             yield "cdef np.%s_t %s" % (typename, name)
 
+    def iternestedcdefs(self, variant, parent, name):
+        typename = self.typespec.resolvedarg(variant).typename()
+        yield "cdef np.%s_t %s_%s = %s.%s" % (typename, parent, name, parent, name)
+
     def iterinferred(self, accept, arg):
         if self.typespec in accept:
             yield self.typespec, Type(type(arg))
@@ -151,8 +155,8 @@ class Composite:
 
     def itercdefs(self, variant, name, isfuncparam):
         for field, fieldtype in sorted(self.lookup.iteritems()):
-            typename = fieldtype.typespec.resolvedarg(variant).typename()
-            yield "cdef np.%s_t %s_%s = %s.%s" % (typename, name, field, name, field)
+            for cdef in fieldtype.iternestedcdefs(variant, name, field):
+                yield cdef
 
     def iterinferred(self, accept, arg):
         return (_ for _ in ())
