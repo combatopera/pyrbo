@@ -141,6 +141,19 @@ class Scalar:
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
 
+class Composite:
+
+    def __init__(self, lookup):
+        self.lookup = lookup
+
+    def cparam(self, variant, name):
+        return name
+
+    def itercdefs(self, variant, name, isfuncparam):
+        for field, fieldtype in sorted(self.lookup.iteritems()):
+            typename = Type(fieldtype).typename()
+            yield "cdef np.%s_t %s_%s = %s.%s" % (typename, name, field, name, field)
+
 class NoSuchVariableException(Exception): pass
 
 class PartialFunctionException(Exception): pass
@@ -317,6 +330,8 @@ class Turbo:
             if list == type(typespec):
                 elementtypespec, = typespec
                 typespec = Array(wrap(elementtypespec))
+            elif dict == type(typespec):
+                typespec = Composite(typespec)
             else:
                 typespec = Scalar(wrap(typespec))
             self.nametotypespec[name] = typespec
