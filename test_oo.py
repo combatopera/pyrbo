@@ -36,7 +36,7 @@ class TestOO(unittest.TestCase):
 
     def test_works(self):
         my = My(5)
-        self.assertEqual(11, my.plus(my, 6)) # FIXME: Automate self.
+        self.assertEqual(11, my.plus(6))
 
 if '__main__' == __name__:
     unittest.main()
