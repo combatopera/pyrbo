@@ -151,7 +151,7 @@ class Composite:
 
     def itercdefs(self, variant, name, isfuncparam):
         for field, fieldtype in sorted(self.lookup.iteritems()):
-            typename = Type(fieldtype).typename()
+            typename = fieldtype.typespec.resolvedarg(variant).typename()
             yield "cdef np.%s_t %s_%s = %s.%s" % (typename, name, field, name, field)
 
     def iterinferred(self, accept, arg):
@@ -328,7 +328,7 @@ def iternametotypespec(wrap, nametotypespec):
             elementtypespec, = typespec
             typespec = Array(wrap(elementtypespec))
         elif dict == type(typespec):
-            typespec = Composite(typespec)
+            typespec = Composite(dict(iternametotypespec(wrap, typespec)))
         else:
             typespec = Scalar(wrap(typespec))
         yield name, typespec
