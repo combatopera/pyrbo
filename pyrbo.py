@@ -300,7 +300,7 @@ def %(name)s(%(cparams)s):
             importlib.import_module(fqmodulename)
         return getattr(sys.modules[fqmodulename], functionname)
 
-class Partial:
+class Partial(object):
 
     def __init__(self, basefunc, variant):
         self.basefunc = basefunc
@@ -315,6 +315,9 @@ class Partial:
 
     def __call__(self, *args, **kwargs):
         return self.basefunc.getvariant(self.variant.close2(self.basefunc, args))(*args, **kwargs)
+
+    def __get__(self, instance, owner):
+        return lambda *args, **kwargs: self(instance, *args, **kwargs)
 
 class Turbo:
 
