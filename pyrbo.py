@@ -113,6 +113,11 @@ class Array:
         else:
             yield "cdef np.%s_t* %s" % (elementtypename, name)
 
+    def iternestedcdefs(self, variant, parent, name):
+        elementtypename = self.elementtypespec.resolvedarg(variant).typename()
+        yield "cdef np.ndarray[np.%s_t] py_%s_%s = %s.%s" % (elementtypename, parent, name, parent, name)
+        yield "cdef np.%s_t* %s_%s = &py_%s_%s[0]" % (elementtypename, parent, name, parent, name)
+
     def iterinferred(self, accept, arg):
         if self.elementtypespec in accept:
             yield self.elementtypespec, Type(arg.dtype.type)
@@ -159,7 +164,9 @@ class Composite:
                 yield cdef
 
     def iterinferred(self, accept, arg):
-        return (_ for _ in ())
+        for field, fieldtype in sorted(self.lookup.iteritems()):
+            for inferred in fieldtype.iterinferred(accept, getattr(arg, field)):
+                yield inferred
 
 class NoSuchVariableException(Exception): pass
 
