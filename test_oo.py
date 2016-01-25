@@ -27,7 +27,7 @@ class My:
     def __init__(self, x):
         self.x = x
 
-    @turbo(self = {'x': np.int8}, y = np.int8, z = np.int8)
+    @turbo(self = dict(x = np.int8), y = np.int8, z = np.int8)
     def plus(self, y):
         z = self_x + y
         return z
