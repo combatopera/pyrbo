@@ -18,7 +18,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from pyrbo import turbo
+from pyrbo import turbo, X
 
 self_x = None
 
@@ -32,11 +32,17 @@ class My:
         z = self_x + y
         return z
 
+    @turbo(self = dict(x = X), y = X, z = X)
+    def plus2(self, y):
+        z = self_x + y
+        return z
+
 class TestOO(unittest.TestCase):
 
     def test_works(self):
         my = My(5)
         self.assertEqual(11, my.plus(6))
+        self.assertEqual(11, my.plus2(6))
 
 if '__main__' == __name__:
     unittest.main()
