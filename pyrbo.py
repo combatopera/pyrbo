@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect, re, importlib, pyximport, sys, os, logging
-from unroll import unroll
+from pyrboimpl.unroll import unroll
 
 log = logging.getLogger(__name__)
 
