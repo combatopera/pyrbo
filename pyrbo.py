@@ -204,7 +204,7 @@ class PartialVariant:
         for name, arg in zip(basefunc.varnames, args):
             for p, t in basefunc.nametotypespec[name].iterinferred(unbound, arg):
                 if p in paramtoarg and paramtoarg[p] != t:
-                    raise AlreadyBoundException(p)
+                    raise AlreadyBoundException(p, paramtoarg[p], t)
                 paramtoarg[p] = t
         return Variant(paramtoarg)
 
