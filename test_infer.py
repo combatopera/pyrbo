@@ -54,7 +54,7 @@ class TestInfer(unittest.TestCase):
             noinfer(x, y)
             self.fail("Expected already bound.")
         except AlreadyBoundException, e:
-            self.assertEqual((T,), e.args)
+            self.assertEqual((T, np.int32, np.float32), e.args)
 
 if '__main__' == __name__:
     unittest.main()

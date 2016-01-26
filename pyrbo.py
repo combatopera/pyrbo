@@ -78,6 +78,9 @@ class Type:
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.t)
 
+    def unwrap(self):
+        return self.t
+
 class BadArgException(Exception): pass
 
 class Obj:
@@ -204,7 +207,7 @@ class PartialVariant:
         for name, arg in zip(basefunc.varnames, args):
             for p, t in basefunc.nametotypespec[name].iterinferred(unbound, arg):
                 if p in paramtoarg and paramtoarg[p] != t:
-                    raise AlreadyBoundException(p, paramtoarg[p], t)
+                    raise AlreadyBoundException(p, paramtoarg[p].unwrap(), t.unwrap())
                 paramtoarg[p] = t
         return Variant(paramtoarg)
 
