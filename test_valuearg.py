@@ -37,9 +37,8 @@ class TestValueArg(unittest.TestCase):
         self.assertEqual((-5, 6), turbotuple[T, np.int32][Y, 6](-5))
 
     def test_arrayof(self):
-        f = arrayof[X, 100]
         try:
-            f.res()
+            arrayof[X, 100]
             self.fail("Expected bad arg.")
         except BadArgException, e:
             self.assertEqual((100,), e.args)

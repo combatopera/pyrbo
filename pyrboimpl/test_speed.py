@@ -32,7 +32,7 @@ class TestSpeed(unittest.TestCase):
         for n in 100, 1000, 10000, 100000:
             x = np.arange(n, dtype = np.float32)
             y = np.arange(n, dtype = np.float32) * 2
-            for task in npsum, tsum.res(), gsum[T, np.float32].res():
+            for task in npsum, tsum, gsum[T, np.float32]:
                 out = np.empty(n, dtype = np.float32)
                 times = []
                 for _ in xrange(quarter * 4):
