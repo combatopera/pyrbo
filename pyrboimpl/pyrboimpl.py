@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, sys, os, logging
+import inspect, re, importlib, sys, os, logging, itertools
 from unroll import unroll
 from common import BadArgException, NoSuchVariableException, PartialFunctionException, NoSuchPlaceholderException, AlreadyBoundException
 
@@ -110,6 +110,10 @@ class Array:
         if self.elementtypespec in accept:
             yield self.elementtypespec, Type(arg.dtype.type)
 
+    def iterplaceholders(self):
+        if self.elementtypespec.isplaceholder:
+            yield self.elementtypespec
+
 class Scalar:
 
     def __init__(self, typespec):
@@ -138,6 +142,10 @@ class Scalar:
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
 
+    def iterplaceholders(self):
+        if self.typespec.isplaceholder:
+            yield self.typespec
+
 class Composite:
 
     def __init__(self, lookup):
@@ -156,30 +164,34 @@ class Composite:
             for inferred in fieldtype.iterinferred(accept, getattr(arg, field)):
                 yield inferred
 
+    def iterplaceholders(self):
+        for fieldtype in self.lookup.itervalues():
+            for placeholder in fieldtype.iterplaceholders():
+                yield placeholder
+
 class PartialVariant:
 
-    def __init__(self, placeholders, paramtoarg = {}):
-        self.placeholders = placeholders
+    def __init__(self, paramtoarg = {}):
         self.paramtoarg = paramtoarg
 
-    def spinoff(self, param, arg):
-        if param not in self.placeholders:
+    def spinoff(self, placeholders, param, arg):
+        if param not in placeholders:
             raise NoSuchPlaceholderException(param)
         if param in self.paramtoarg:
             raise AlreadyBoundException(param)
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
-        return PartialVariant(self.placeholders, paramtoarg)
+        return PartialVariant(paramtoarg)
 
-    def close(self):
-        if len(self.paramtoarg) == len(self.placeholders):
+    def close(self, basefunc):
+        if len(self.paramtoarg) == len(basefunc.placeholders):
             return Variant(self.paramtoarg)
-        raise PartialFunctionException(sorted(p for p in self.placeholders if p not in self.paramtoarg))
+        raise PartialFunctionException(sorted(p for p in basefunc.placeholders if p not in self.paramtoarg))
 
     def close2(self, basefunc, args):
-        if len(self.paramtoarg) == len(self.placeholders):
+        if len(self.paramtoarg) == len(basefunc.placeholders):
             return Variant(self.paramtoarg)
-        unbound = set(p for p in self.placeholders if p not in self.paramtoarg)
+        unbound = set(p for p in basefunc.placeholders if p not in self.paramtoarg)
         paramtoarg = self.paramtoarg.copy()
         for name, arg in zip(basefunc.varnames, args):
             for p, t in basefunc.nametotypespec[name].iterinferred(unbound, arg):
@@ -236,6 +248,7 @@ def %(name)s(%(cparams)s):
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
         self.argcount = pyfunc.func_code.co_argcount
+        self.placeholders = set(itertools.chain(*(typespec.iterplaceholders() for typespec in nametotypespec.itervalues())))
         self.nametotypespec = nametotypespec
         self.variants = {}
 
@@ -306,8 +319,8 @@ class Descriptor(object):
         return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
 
 def partialorcomplete(basefunc, variant):
-    if len(variant.paramtoarg) == len(variant.placeholders):
-        return basefunc.getvariant(variant.close())
+    if len(variant.paramtoarg) == len(basefunc.placeholders):
+        return basefunc.getvariant(variant.close(basefunc))
     else:
         return Partial(basefunc, variant)
 
@@ -319,7 +332,7 @@ class Partial(Descriptor):
 
     def __getitem__(self, (param, arg)):
         arg = Type(arg) if type == type(arg) else Obj(arg)
-        return partialorcomplete(self.basefunc, self.variant.spinoff(param, arg))
+        return partialorcomplete(self.basefunc, self.variant.spinoff(self.basefunc.placeholders, param, arg))
 
     def __call__(self, *args, **kwargs):
         return self.basefunc.getvariant(self.variant.close2(self.basefunc, args))(*args, **kwargs)
@@ -330,26 +343,22 @@ class Partial(Descriptor):
 class Turbo:
 
     @classmethod
-    def iternametotypespec(cls, wrap, nametotypespec):
+    def iternametotypespec(cls, nametotypespec):
+        def wrap(spec):
+            return spec if isinstance(spec, Placeholder) else Type(spec)
         for name, typespec in nametotypespec.iteritems():
             if list == type(typespec):
                 elementtypespec, = typespec
                 typespec = Array(wrap(elementtypespec))
             elif dict == type(typespec):
-                typespec = Composite(dict(cls.iternametotypespec(wrap, typespec)))
+                typespec = Composite(dict(cls.iternametotypespec(typespec)))
             else:
                 typespec = Scalar(wrap(typespec))
             yield name, typespec
 
     def __init__(self, nametotypespec):
-        placeholders = set()
-        def wrap(spec):
-            if Placeholder == type(spec):
-                placeholders.add(spec)
-                return spec
-            return Type(spec)
-        self.nametotypespec = dict(self.iternametotypespec(wrap, nametotypespec))
-        self.variant = PartialVariant(placeholders)
+        self.nametotypespec = dict(self.iternametotypespec(nametotypespec))
+        self.variant = PartialVariant()
 
     def __call__(self, pyfunc):
         return partialorcomplete(BaseFunction(self.nametotypespec, pyfunc), self.variant)
