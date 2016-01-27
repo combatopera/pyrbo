@@ -17,6 +17,7 @@
 
 import inspect, re, importlib, pyximport, sys, os, logging
 from pyrboimpl.unroll import unroll
+from pyrboimpl.common import BadArgException, NoSuchVariableException, PartialFunctionException, NoSuchPlaceholderException, AlreadyBoundException
 
 log = logging.getLogger(__name__)
 
@@ -80,8 +81,6 @@ class Type:
 
     def unwrap(self):
         return self.t
-
-class BadArgException(Exception): pass
 
 class Obj:
 
@@ -170,14 +169,6 @@ class Composite:
         for field, fieldtype in sorted(self.lookup.iteritems()):
             for inferred in fieldtype.iterinferred(accept, getattr(arg, field)):
                 yield inferred
-
-class NoSuchVariableException(Exception): pass
-
-class PartialFunctionException(Exception): pass
-
-class NoSuchPlaceholderException(Exception): pass
-
-class AlreadyBoundException(Exception): pass
 
 class PartialVariant:
 
