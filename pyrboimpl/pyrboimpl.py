@@ -292,9 +292,26 @@ def %(name)s(%(cparams)s):
                     g.flush()
                 log.debug("Compiling: %s", functionname)
             importlib.import_module(fqmodulename)
-        return getattr(sys.modules[fqmodulename], functionname)
+        return Descriptor(getattr(sys.modules[fqmodulename], functionname))
 
-class Partial(object):
+class Descriptor(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def __call__(self, *args, **kwargs):
+        return self.f(*args, **kwargs)
+
+    def __get__(self, instance, owner):
+        return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
+
+def partialorcomplete(basefunc, variant):
+    if len(variant.paramtoarg) == len(variant.placeholders):
+        return basefunc.getvariant(variant.close())
+    else:
+        return Partial(basefunc, variant)
+
+class Partial(Descriptor):
 
     def __init__(self, basefunc, variant):
         self.basefunc = basefunc
@@ -302,10 +319,7 @@ class Partial(object):
 
     def __getitem__(self, (param, arg)):
         arg = Type(arg) if type == type(arg) else Obj(arg)
-        return Partial(self.basefunc, self.variant.spinoff(param, arg))
-
-    def res(self):
-        return self.basefunc.getvariant(self.variant.close())
+        return partialorcomplete(self.basefunc, self.variant.spinoff(param, arg))
 
     def __call__(self, *args, **kwargs):
         return self.basefunc.getvariant(self.variant.close2(self.basefunc, args))(*args, **kwargs)
@@ -338,4 +352,4 @@ class Turbo:
         self.variant = PartialVariant(placeholders)
 
     def __call__(self, pyfunc):
-        return Partial(BaseFunction(self.nametotypespec, pyfunc), self.variant)
+        return partialorcomplete(BaseFunction(self.nametotypespec, pyfunc), self.variant)
