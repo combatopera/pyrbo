@@ -313,18 +313,19 @@ class Partial(object):
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self(instance, *args, **kwargs)
 
-def iternametotypespec(wrap, nametotypespec):
-    for name, typespec in nametotypespec.iteritems():
-        if list == type(typespec):
-            elementtypespec, = typespec
-            typespec = Array(wrap(elementtypespec))
-        elif dict == type(typespec):
-            typespec = Composite(dict(iternametotypespec(wrap, typespec)))
-        else:
-            typespec = Scalar(wrap(typespec))
-        yield name, typespec
-
 class Turbo:
+
+    @classmethod
+    def iternametotypespec(cls, wrap, nametotypespec):
+        for name, typespec in nametotypespec.iteritems():
+            if list == type(typespec):
+                elementtypespec, = typespec
+                typespec = Array(wrap(elementtypespec))
+            elif dict == type(typespec):
+                typespec = Composite(dict(cls.iternametotypespec(wrap, typespec)))
+            else:
+                typespec = Scalar(wrap(typespec))
+            yield name, typespec
 
     def __init__(self, nametotypespec):
         placeholders = set()
@@ -333,7 +334,7 @@ class Turbo:
                 placeholders.add(spec)
                 return spec
             return Type(spec)
-        self.nametotypespec = dict(iternametotypespec(wrap, nametotypespec))
+        self.nametotypespec = dict(self.iternametotypespec(wrap, nametotypespec))
         self.variant = PartialVariant(placeholders)
 
     def __call__(self, pyfunc):
