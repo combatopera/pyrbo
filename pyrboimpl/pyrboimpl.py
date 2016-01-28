@@ -84,7 +84,9 @@ class Obj:
 
 class Array:
 
-    def __init__(self, elementtypespec):
+    def __init__(self, elementtypespec, ndim):
+        self.ndimtext = ", ndim=%s" % ndim if 1 != ndim else ''
+        self.zeros = ', '.join(['0'] * ndim)
         self.elementtypespec = elementtypespec
 
     def ispotentialconst(self):
@@ -92,19 +94,19 @@ class Array:
 
     def cparam(self, variant, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        return "np.ndarray[np.%s_t] py_%s" % (elementtypename, name)
+        return "np.ndarray[np.%s_t%s] py_%s" % (elementtypename, self.ndimtext, name)
 
     def itercdefs(self, variant, name, isfuncparam):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         if isfuncparam:
-            yield "cdef np.%s_t* %s = &py_%s[0]" % (elementtypename, name, name)
+            yield "cdef np.%s_t* %s = &py_%s[%s]" % (elementtypename, name, name, self.zeros)
         else:
             yield "cdef np.%s_t* %s" % (elementtypename, name)
 
     def iternestedcdefs(self, variant, parent, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        yield "cdef np.ndarray[np.%s_t] py_%s_%s = %s.%s" % (elementtypename, parent, name, parent, name)
-        yield "cdef np.%s_t* %s_%s = &py_%s_%s[0]" % (elementtypename, parent, name, parent, name)
+        yield "cdef np.ndarray[np.%s_t%s] py_%s_%s = %s.%s" % (elementtypename, self.ndimtext, parent, name, parent, name)
+        yield "cdef np.%s_t* %s_%s = &py_%s_%s[%s]" % (elementtypename, parent, name, parent, name, self.zeros)
 
     def iterinferred(self, accept, arg):
         if self.elementtypespec in accept:
@@ -349,7 +351,11 @@ class Turbo:
             for name, typespec in nametotypespec.iteritems():
                 if list == type(typespec):
                     elementtypespec, = typespec
-                    typespec = Array(wrap(elementtypespec))
+                    ndim = 1
+                    while list == type(elementtypespec):
+                        elementtypespec, = elementtypespec
+                        ndim += 1
+                    typespec = Array(wrap(elementtypespec), ndim)
                 elif dict == type(typespec):
                     typespec = Composite(dict(iternametotypespec(typespec)))
                 else:
