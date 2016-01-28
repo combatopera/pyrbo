@@ -19,8 +19,6 @@ class BadArgException(Exception): pass
 
 class NoSuchVariableException(Exception): pass
 
-class PartialFunctionException(Exception): pass
-
 class NoSuchPlaceholderException(Exception): pass
 
 class AlreadyBoundException(Exception): pass
