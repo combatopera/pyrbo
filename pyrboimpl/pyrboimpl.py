@@ -150,24 +150,24 @@ class Scalar:
 
 class Composite:
 
-    def __init__(self, lookup):
-        self.lookup = lookup
+    def __init__(self, fields):
+        self.fields = fields
 
     def cparam(self, variant, name):
         return name
 
     def itercdefs(self, variant, name, isfuncparam):
-        for field, fieldtype in sorted(self.lookup.iteritems()):
+        for field, fieldtype in sorted(self.fields.iteritems()):
             for cdef in fieldtype.iternestedcdefs(variant, name, field):
                 yield cdef
 
     def iterinferred(self, accept, arg):
-        for field, fieldtype in sorted(self.lookup.iteritems()):
+        for field, fieldtype in sorted(self.fields.iteritems()):
             for inferred in fieldtype.iterinferred(accept, getattr(arg, field)):
                 yield inferred
 
     def iterplaceholders(self):
-        for fieldtype in self.lookup.itervalues():
+        for fieldtype in self.fields.itervalues():
             for placeholder in fieldtype.iterplaceholders():
                 yield placeholder
 
