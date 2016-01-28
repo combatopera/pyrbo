@@ -17,11 +17,10 @@
 
 import pyximport, sys, os, logging
 from pyrboimpl import pyrboimpl
-from pyrboimpl.common import BadArgException, NoSuchVariableException, PartialFunctionException, NoSuchPlaceholderException, AlreadyBoundException
+from pyrboimpl.common import BadArgException, NoSuchVariableException, NoSuchPlaceholderException, AlreadyBoundException
 
 BadArgException = BadArgException
 NoSuchVariableException = NoSuchVariableException
-PartialFunctionException = PartialFunctionException
 NoSuchPlaceholderException = NoSuchPlaceholderException
 AlreadyBoundException = AlreadyBoundException
 

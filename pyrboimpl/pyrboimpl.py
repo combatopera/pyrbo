@@ -17,7 +17,7 @@
 
 import inspect, re, importlib, sys, os, logging, itertools
 from unroll import unroll
-from common import BadArgException, NoSuchVariableException, PartialFunctionException, NoSuchPlaceholderException, AlreadyBoundException
+from common import BadArgException, NoSuchVariableException, NoSuchPlaceholderException, AlreadyBoundException
 
 log = logging.getLogger(__name__)
 
@@ -171,28 +171,25 @@ class Composite:
             for placeholder in fieldtype.iterplaceholders():
                 yield placeholder
 
-class PartialVariant:
+class Variant:
 
-    def __init__(self, paramtoarg = {}):
+    def __init__(self, basefunc, paramtoarg):
+        if len(paramtoarg) == len(basefunc.placeholders):
+            self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.iteritems()))
+        else:
+            self.suffix = None
         self.paramtoarg = paramtoarg
 
-    def spinoff(self, placeholders, param, arg):
-        if param not in placeholders:
+    def spinoff(self, basefunc, param, arg):
+        if param not in basefunc.placeholders:
             raise NoSuchPlaceholderException(param)
         if param in self.paramtoarg:
             raise AlreadyBoundException(param)
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
-        return PartialVariant(paramtoarg)
+        return Variant(basefunc, paramtoarg)
 
-    def close(self, basefunc):
-        if len(self.paramtoarg) == len(basefunc.placeholders):
-            return Variant(self.paramtoarg)
-        raise PartialFunctionException(sorted(p for p in basefunc.placeholders if p not in self.paramtoarg))
-
-    def close2(self, basefunc, args):
-        if len(self.paramtoarg) == len(basefunc.placeholders):
-            return Variant(self.paramtoarg)
+    def complete(self, basefunc, args):
         unbound = set(p for p in basefunc.placeholders if p not in self.paramtoarg)
         paramtoarg = self.paramtoarg.copy()
         for name, arg in zip(basefunc.varnames, args):
@@ -200,13 +197,7 @@ class PartialVariant:
                 if p in paramtoarg and paramtoarg[p] != t:
                     raise AlreadyBoundException(p, paramtoarg[p].unwrap(), t.unwrap())
                 paramtoarg[p] = t
-        return Variant(paramtoarg)
-
-class Variant:
-
-    def __init__(self, paramtoarg):
-        self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.iteritems()))
-        self.paramtoarg = paramtoarg
+        return Variant(basefunc, paramtoarg)
 
 class BaseFunction:
 
@@ -289,11 +280,8 @@ def %(name)s(%(cparams)s):
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
             filepath = os.path.join(fileparent, functionname + '.pyx')
             if os.path.exists(filepath):
-                file = open(filepath)
-                try:
-                    existingtext = file.read()
-                finally:
-                    file.close()
+                with open(filepath) as f:
+                    existingtext = f.read()
             else:
                 existingtext = None
             if text != existingtext:
@@ -321,8 +309,8 @@ class Descriptor(object):
         return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
 
 def partialorcomplete(basefunc, variant):
-    if len(variant.paramtoarg) == len(basefunc.placeholders):
-        return basefunc.getvariant(variant.close(basefunc))
+    if variant.suffix is not None:
+        return basefunc.getvariant(variant)
     else:
         return Partial(basefunc, variant)
 
@@ -334,10 +322,10 @@ class Partial(Descriptor):
 
     def __getitem__(self, (param, arg)):
         arg = Type(arg) if type == type(arg) else Obj(arg)
-        return partialorcomplete(self.basefunc, self.variant.spinoff(self.basefunc.placeholders, param, arg))
+        return partialorcomplete(self.basefunc, self.variant.spinoff(self.basefunc, param, arg))
 
     def __call__(self, *args, **kwargs):
-        return self.basefunc.getvariant(self.variant.close2(self.basefunc, args))(*args, **kwargs)
+        return self.basefunc.getvariant(self.variant.complete(self.basefunc, args))(*args, **kwargs)
 
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self(instance, *args, **kwargs)
@@ -362,7 +350,7 @@ class Turbo:
                     typespec = Scalar(wrap(typespec))
                 yield name, typespec
         self.nametotypespec = dict(iternametotypespec(nametotypespec))
-        self.variant = PartialVariant()
 
     def __call__(self, pyfunc):
-        return partialorcomplete(BaseFunction(self.nametotypespec, pyfunc), self.variant)
+        basefunc = BaseFunction(self.nametotypespec, pyfunc)
+        return partialorcomplete(basefunc, Variant(basefunc, {}))
