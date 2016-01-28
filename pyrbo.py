@@ -34,7 +34,7 @@ def pyxinstall():
         conf.update(turboconf.turboconf)
     except ImportError:
         print >> sys.stderr, 'turboconf module not found in:', os.environ.get('PYTHONPATH')
-    log.debug("pyximport config: %s", conf)
+    log.debug("pyximport config: %s", conf) # XXX: Can we use pyxbld files instead?
     pyximport.install(**conf) # Note -O3 is apparently the default.
 pyxinstall()
 del pyxinstall
