@@ -342,22 +342,20 @@ class Partial(Descriptor):
 
 class Turbo:
 
-    @classmethod
-    def iternametotypespec(cls, nametotypespec):
+    def __init__(self, nametotypespec):
         def wrap(spec):
             return spec if isinstance(spec, Placeholder) else Type(spec)
-        for name, typespec in nametotypespec.iteritems():
-            if list == type(typespec):
-                elementtypespec, = typespec
-                typespec = Array(wrap(elementtypespec))
-            elif dict == type(typespec):
-                typespec = Composite(dict(cls.iternametotypespec(typespec)))
-            else:
-                typespec = Scalar(wrap(typespec))
-            yield name, typespec
-
-    def __init__(self, nametotypespec):
-        self.nametotypespec = dict(self.iternametotypespec(nametotypespec))
+        def iternametotypespec(nametotypespec):
+            for name, typespec in nametotypespec.iteritems():
+                if list == type(typespec):
+                    elementtypespec, = typespec
+                    typespec = Array(wrap(elementtypespec))
+                elif dict == type(typespec):
+                    typespec = Composite(dict(iternametotypespec(typespec)))
+                else:
+                    typespec = Scalar(wrap(typespec))
+                yield name, typespec
+        self.nametotypespec = dict(iternametotypespec(nametotypespec))
         self.variant = PartialVariant()
 
     def __call__(self, pyfunc):
