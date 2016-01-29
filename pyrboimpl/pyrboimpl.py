@@ -192,9 +192,8 @@ class Variant:
         paramtoarg = self.paramtoarg.copy()
         for name, arg in zip(decorated.varnames, args):
             for p, t in decorated.nametotypespec[name].iterinferred(self.unbound, arg):
-                if p in paramtoarg and paramtoarg[p] != t:
-                    raise AlreadyBoundException(p, paramtoarg[p].unwrap(), t.unwrap())
-                paramtoarg[p] = t
+                if p not in paramtoarg:
+                    paramtoarg[p] = t
         return Variant(decorated, paramtoarg)
 
 class Decorated:
