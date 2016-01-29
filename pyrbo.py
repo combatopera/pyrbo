@@ -41,4 +41,4 @@ del pyxinstall
 globals().update([p.name, p] for p in (pyrboimpl.Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1)))
 
 def turbo(**nametotypespec):
-    return pyrboimpl.Turbo(nametotypespec)
+    return pyrboimpl.Decorator(nametotypespec)
