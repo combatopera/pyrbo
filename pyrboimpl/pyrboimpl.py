@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, sys, os, logging, itertools
+import inspect, re, importlib, sys, os, logging
 from unroll import unroll
 from common import BadArgException, NoSuchVariableException, NoSuchPlaceholderException, AlreadyBoundException
 
@@ -108,13 +108,9 @@ class Array:
         yield "cdef np.ndarray[np.%s_t%s] py_%s_%s = %s.%s" % (elementtypename, self.ndimtext, parent, name, parent, name)
         yield "cdef np.%s_t* %s_%s = &py_%s_%s[%s]" % (elementtypename, parent, name, parent, name, self.zeros)
 
-    def iterinferred(self, accept, arg):
-        if self.elementtypespec == accept:
-            yield self.elementtypespec, Type(arg.dtype.type)
-
     def iterplaceholders(self):
         if self.elementtypespec.isplaceholder:
-            yield self.elementtypespec
+            yield self.elementtypespec, lambda arg: Type(arg.dtype.type)
 
 class Scalar:
 
@@ -137,39 +133,48 @@ class Scalar:
         typename = self.typespec.resolvedarg(variant).typename()
         yield "cdef np.%s_t %s_%s = %s.%s" % (typename, parent, name, parent, name)
 
-    def iterinferred(self, accept, arg):
-        if self.typespec == accept:
-            yield self.typespec, Type(type(arg))
-
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
 
     def iterplaceholders(self):
         if self.typespec.isplaceholder:
-            yield self.typespec
+            yield self.typespec, lambda arg: Type(type(arg))
 
 class Composite:
 
     def __init__(self, fields):
-        self.fields = fields
+        self.fields = sorted(fields.iteritems())
 
     def cparam(self, variant, name):
         return name
 
     def itercdefs(self, variant, name, isfuncparam):
-        for field, fieldtype in sorted(self.fields.iteritems()):
+        for field, fieldtype in self.fields:
             for cdef in fieldtype.iternestedcdefs(variant, name, field):
                 yield cdef
 
-    def iterinferred(self, accept, arg):
-        for field, fieldtype in sorted(self.fields.iteritems()):
-            for inferred in fieldtype.iterinferred(accept, getattr(arg, field)):
-                yield inferred
-
     def iterplaceholders(self):
-        for fieldtype in self.fields.itervalues():
-            for placeholder in fieldtype.iterplaceholders():
-                yield placeholder
+        for field, fieldtype in self.fields:
+            for placeholder, resolver in fieldtype.iterplaceholders():
+                yield placeholder, FieldResolver(field, resolver)
+
+class FieldResolver:
+
+    def __init__(self, field, resolver):
+        self.field = field
+        self.resolver = resolver
+
+    def __call__(self, arg):
+        return self.resolver(getattr(arg, self.field))
+
+class PositionalResolver:
+
+    def __init__(self, i, resolver):
+        self.i = i
+        self.resolver = resolver
+
+    def __call__(self, args):
+        return self.resolver(args[self.i])
 
 class Variant:
 
@@ -190,13 +195,8 @@ class Variant:
 
     def complete(self, decorated, args):
         paramtoarg = self.paramtoarg.copy()
-        for unbound in self.unbound:
-            argindex = decorated.placeholdertoargindex[unbound]
-            name = decorated.varnames[argindex]
-            arg = args[argindex]
-            for p, t in decorated.nametotypespec[name].iterinferred(unbound, arg):
-                if p not in paramtoarg:
-                    paramtoarg[p] = t
+        for param in self.unbound:
+            paramtoarg[param] = decorated.placeholdertoresolver[param](args)
         return Variant(decorated, paramtoarg)
 
 class Decorated:
@@ -241,13 +241,16 @@ def %(name)s(%(cparams)s):
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
         self.argcount = pyfunc.func_code.co_argcount
-        # Note placeholders includes those in consts, placeholdertoargindex does not:
-        self.placeholders = set(itertools.chain(*(typespec.iterplaceholders() for typespec in nametotypespec.itervalues())))
-        self.placeholdertoargindex = {}
+        # Note placeholders includes those in consts, placeholdertoresolver does not:
+        self.placeholders = set()
+        for typespec in nametotypespec.itervalues():
+            for param, _ in typespec.iterplaceholders():
+                self.placeholders.add(param)
+        self.placeholdertoresolver = {}
         for i in xrange(self.argcount):
-            for placeholder in nametotypespec[self.varnames[i]].iterplaceholders():
-                if placeholder not in self.placeholdertoargindex:
-                    self.placeholdertoargindex[placeholder] = i
+            for placeholder, resolver in nametotypespec[self.varnames[i]].iterplaceholders():
+                if placeholder not in self.placeholdertoresolver:
+                    self.placeholdertoresolver[placeholder] = PositionalResolver(i, resolver)
         self.nametotypespec = nametotypespec
         self.suffixtocomplete = {}
 
