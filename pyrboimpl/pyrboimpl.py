@@ -314,7 +314,7 @@ def partialorcomplete(decorated, variant):
     else:
         return Partial(decorated, variant)
 
-class Partial(Descriptor):
+class Partial(object):
 
     def __init__(self, decorated, variant):
         self.decorated = decorated
