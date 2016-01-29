@@ -174,26 +174,24 @@ class Composite:
 class Variant:
 
     def __init__(self, decorated, paramtoarg):
-        if len(paramtoarg) == len(decorated.placeholders):
+        self.unbound = set(p for p in decorated.placeholders if p not in paramtoarg)
+        if not self.unbound:
             self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.iteritems()))
-        else:
-            self.suffix = None
         self.paramtoarg = paramtoarg
 
     def spinoff(self, decorated, param, arg):
         if param not in decorated.placeholders:
             raise NoSuchPlaceholderException(param)
         if param in self.paramtoarg:
-            raise AlreadyBoundException(param)
+            raise AlreadyBoundException(param, self.paramtoarg[param].unwrap(), arg.unwrap())
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
         return Variant(decorated, paramtoarg)
 
     def complete(self, decorated, args):
-        unbound = set(p for p in decorated.placeholders if p not in self.paramtoarg)
         paramtoarg = self.paramtoarg.copy()
         for name, arg in zip(decorated.varnames, args):
-            for p, t in decorated.nametotypespec[name].iterinferred(unbound, arg):
+            for p, t in decorated.nametotypespec[name].iterinferred(self.unbound, arg):
                 if p in paramtoarg and paramtoarg[p] != t:
                     raise AlreadyBoundException(p, paramtoarg[p].unwrap(), t.unwrap())
                 paramtoarg[p] = t
@@ -309,10 +307,10 @@ class Complete(object):
         return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
 
 def partialorcomplete(decorated, variant):
-    if variant.suffix is not None:
-        return decorated.getcomplete(variant)
-    else:
+    if variant.unbound:
         return Partial(decorated, variant)
+    else:
+        return decorated.getcomplete(variant)
 
 class Partial(object):
 
