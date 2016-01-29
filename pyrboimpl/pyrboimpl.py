@@ -330,7 +330,7 @@ class Partial(Descriptor):
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self(instance, *args, **kwargs)
 
-class Turbo:
+class Decorator:
 
     def __init__(self, nametotypespec):
         def wrap(spec):
