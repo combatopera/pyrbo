@@ -243,16 +243,16 @@ def %(name)s(%(cparams)s):
         self.argcount = pyfunc.func_code.co_argcount
         self.placeholders = set(itertools.chain(*(typespec.iterplaceholders() for typespec in nametotypespec.itervalues())))
         self.nametotypespec = nametotypespec
-        self.variants = {}
+        self.suffixtocomplete = {}
 
-    def getvariant(self, variant):
+    def getcomplete(self, variant):
         try:
-            return self.variants[variant.suffix]
+            return self.suffixtocomplete[variant.suffix]
         except KeyError:
-            self.variants[variant.suffix] = f = self.getvariantimpl(variant)
+            self.suffixtocomplete[variant.suffix] = f = self.loadcomplete(variant)
             return f
 
-    def getvariantimpl(self, variant):
+    def loadcomplete(self, variant):
         functionname = self.name + variant.suffix
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         if fqmodulename not in sys.modules:
@@ -310,7 +310,7 @@ class Complete(object):
 
 def partialorcomplete(decorated, variant):
     if variant.suffix is not None:
-        return decorated.getvariant(variant)
+        return decorated.getcomplete(variant)
     else:
         return Partial(decorated, variant)
 
@@ -325,7 +325,7 @@ class Partial(object):
         return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
 
     def __call__(self, *args, **kwargs):
-        return self.decorated.getvariant(self.variant.complete(self.decorated, args))(*args, **kwargs)
+        return self.decorated.getcomplete(self.variant.complete(self.decorated, args))(*args, **kwargs)
 
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self(instance, *args, **kwargs)
