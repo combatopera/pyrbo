@@ -19,7 +19,7 @@
 
 import numpy as np
 import unittest
-from pyrbo import turbo, T, U, X, AlreadyBoundException
+from pyrbo import turbo, T, U, X
 
 @turbo(x = [T], y = [U], n = np.uint32)
 def addxtoy(x, y, n):
@@ -49,12 +49,12 @@ class TestInfer(unittest.TestCase):
 
     def test_failure(self):
         x = np.arange(10, dtype = np.int32)
-        y = np.arange(10, dtype = np.float32)
+        y = np.arange(10, dtype = np.float32) # Type not used.
         try:
             noinfer(x, y)
-            self.fail("Expected already bound.")
-        except AlreadyBoundException, e:
-            self.assertEqual((T, np.int32, np.float32), e.args)
+            self.fail("Expected value error.")
+        except ValueError, e:
+            self.assertEqual(("Buffer dtype mismatch, expected 'int32_t' but got 'float'",), e.args)
 
 if '__main__' == __name__:
     unittest.main()
