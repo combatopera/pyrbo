@@ -173,33 +173,33 @@ class Composite:
 
 class Variant:
 
-    def __init__(self, basefunc, paramtoarg):
-        if len(paramtoarg) == len(basefunc.placeholders):
+    def __init__(self, decorated, paramtoarg):
+        if len(paramtoarg) == len(decorated.placeholders):
             self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.iteritems()))
         else:
             self.suffix = None
         self.paramtoarg = paramtoarg
 
-    def spinoff(self, basefunc, param, arg):
-        if param not in basefunc.placeholders:
+    def spinoff(self, decorated, param, arg):
+        if param not in decorated.placeholders:
             raise NoSuchPlaceholderException(param)
         if param in self.paramtoarg:
             raise AlreadyBoundException(param)
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
-        return Variant(basefunc, paramtoarg)
+        return Variant(decorated, paramtoarg)
 
-    def complete(self, basefunc, args):
-        unbound = set(p for p in basefunc.placeholders if p not in self.paramtoarg)
+    def complete(self, decorated, args):
+        unbound = set(p for p in decorated.placeholders if p not in self.paramtoarg)
         paramtoarg = self.paramtoarg.copy()
-        for name, arg in zip(basefunc.varnames, args):
-            for p, t in basefunc.nametotypespec[name].iterinferred(unbound, arg):
+        for name, arg in zip(decorated.varnames, args):
+            for p, t in decorated.nametotypespec[name].iterinferred(unbound, arg):
                 if p in paramtoarg and paramtoarg[p] != t:
                     raise AlreadyBoundException(p, paramtoarg[p].unwrap(), t.unwrap())
                 paramtoarg[p] = t
-        return Variant(basefunc, paramtoarg)
+        return Variant(decorated, paramtoarg)
 
-class BaseFunction:
+class Decorated:
 
     template = '''cimport numpy as np
 import cython
@@ -308,24 +308,24 @@ class Descriptor(object):
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
 
-def partialorcomplete(basefunc, variant):
+def partialorcomplete(decorated, variant):
     if variant.suffix is not None:
-        return basefunc.getvariant(variant)
+        return decorated.getvariant(variant)
     else:
-        return Partial(basefunc, variant)
+        return Partial(decorated, variant)
 
 class Partial(Descriptor):
 
-    def __init__(self, basefunc, variant):
-        self.basefunc = basefunc
+    def __init__(self, decorated, variant):
+        self.decorated = decorated
         self.variant = variant
 
     def __getitem__(self, (param, arg)):
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
-        return partialorcomplete(self.basefunc, self.variant.spinoff(self.basefunc, param, arg))
+        return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
 
     def __call__(self, *args, **kwargs):
-        return self.basefunc.getvariant(self.variant.complete(self.basefunc, args))(*args, **kwargs)
+        return self.decorated.getvariant(self.variant.complete(self.decorated, args))(*args, **kwargs)
 
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self(instance, *args, **kwargs)
@@ -352,5 +352,5 @@ class Decorator:
         self.nametotypespec = dict(iternametotypespec(nametotypespec))
 
     def __call__(self, pyfunc):
-        basefunc = BaseFunction(self.nametotypespec, pyfunc)
-        return partialorcomplete(basefunc, Variant(basefunc, {}))
+        decorated = Decorated(self.nametotypespec, pyfunc)
+        return partialorcomplete(decorated, Variant(decorated, {}))
