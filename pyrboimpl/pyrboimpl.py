@@ -109,7 +109,7 @@ class Array:
         yield "cdef np.%s_t* %s_%s = &py_%s_%s[%s]" % (elementtypename, parent, name, parent, name, self.zeros)
 
     def iterinferred(self, accept, arg):
-        if self.elementtypespec in accept:
+        if self.elementtypespec == accept:
             yield self.elementtypespec, Type(arg.dtype.type)
 
     def iterplaceholders(self):
@@ -138,7 +138,7 @@ class Scalar:
         yield "cdef np.%s_t %s_%s = %s.%s" % (typename, parent, name, parent, name)
 
     def iterinferred(self, accept, arg):
-        if self.typespec in accept:
+        if self.typespec == accept:
             yield self.typespec, Type(type(arg))
 
     def resolvedobj(self, variant):
@@ -190,8 +190,11 @@ class Variant:
 
     def complete(self, decorated, args):
         paramtoarg = self.paramtoarg.copy()
-        for name, arg in zip(decorated.varnames, args):
-            for p, t in decorated.nametotypespec[name].iterinferred(self.unbound, arg):
+        for unbound in self.unbound:
+            argindex = decorated.placeholdertoargindex[unbound]
+            name = decorated.varnames[argindex]
+            arg = args[argindex]
+            for p, t in decorated.nametotypespec[name].iterinferred(unbound, arg):
                 if p not in paramtoarg:
                     paramtoarg[p] = t
         return Variant(decorated, paramtoarg)
@@ -238,7 +241,13 @@ def %(name)s(%(cparams)s):
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
         self.argcount = pyfunc.func_code.co_argcount
+        # Note placeholders includes those in consts, placeholdertoargindex does not:
         self.placeholders = set(itertools.chain(*(typespec.iterplaceholders() for typespec in nametotypespec.itervalues())))
+        self.placeholdertoargindex = {}
+        for i in xrange(self.argcount):
+            for placeholder in nametotypespec[self.varnames[i]].iterplaceholders():
+                if placeholder not in self.placeholdertoargindex:
+                    self.placeholdertoargindex[placeholder] = i
         self.nametotypespec = nametotypespec
         self.suffixtocomplete = {}
 
