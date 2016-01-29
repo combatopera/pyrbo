@@ -295,9 +295,9 @@ def %(name)s(%(cparams)s):
                     g.flush()
                 log.debug("Compiling: %s", functionname)
             importlib.import_module(fqmodulename)
-        return Descriptor(getattr(sys.modules[fqmodulename], functionname))
+        return Complete(getattr(sys.modules[fqmodulename], functionname))
 
-class Descriptor(object):
+class Complete(object):
 
     def __init__(self, f):
         self.f = f
