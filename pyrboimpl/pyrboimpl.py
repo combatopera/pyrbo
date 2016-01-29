@@ -321,7 +321,7 @@ class Partial(Descriptor):
         self.variant = variant
 
     def __getitem__(self, (param, arg)):
-        arg = Type(arg) if type == type(arg) else Obj(arg)
+        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         return partialorcomplete(self.basefunc, self.variant.spinoff(self.basefunc, param, arg))
 
     def __call__(self, *args, **kwargs):
