@@ -19,10 +19,10 @@ import pyximport, sys, os, logging
 from pyrboimpl import pyrboimpl
 from pyrboimpl.common import BadArgException, NoSuchVariableException, NoSuchPlaceholderException, AlreadyBoundException
 
-BadArgException = BadArgException
-NoSuchVariableException = NoSuchVariableException
-NoSuchPlaceholderException = NoSuchPlaceholderException
-AlreadyBoundException = AlreadyBoundException
+assert BadArgException
+assert NoSuchVariableException
+assert NoSuchPlaceholderException
+assert AlreadyBoundException
 
 log = logging.getLogger(__name__)
 
