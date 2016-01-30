@@ -18,8 +18,10 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import numpy as np, time, unittest
+import numpy as np, time, unittest, logging
 from pkg.mymod import tsum, gsum, T
+
+log = logging.getLogger(__name__)
 
 def npsum(n, x, y, out):
     out[:n] = x[:n]
@@ -27,12 +29,17 @@ def npsum(n, x, y, out):
 
 class TestSpeed(unittest.TestCase):
 
+    ntomaxreldiff = {100: .1} # I guess in small array case we see some setup overhead.
+
     def test_fastenough(self):
         quarter = 3
+        nandtasktoquartiles = {}
         for n in 100, 1000, 10000, 100000:
+            log.info("n: %s", n)
             x = np.arange(n, dtype = np.float32)
             y = np.arange(n, dtype = np.float32) * 2
             for task in npsum, tsum, gsum[T, np.float32]:
+                log.info("task: %s", task)
                 out = np.empty(n, dtype = np.float32)
                 times = []
                 for _ in xrange(quarter * 4):
@@ -41,11 +48,15 @@ class TestSpeed(unittest.TestCase):
                     times.append(time.time() - t)
                 times.sort()
                 quartiles = [(times[quarter * q - 1] + times[quarter * q]) / 2 for q in [1, 2, 3]]
-                if npsum == task:
-                    check = quartiles
-                else:
-                    for npq, tq in zip(check, quartiles):
-                        self.assertTrue(tq <= npq)
+                log.info("quartiles: %s", ' '.join("%.9f" % q for q in quartiles))
+                nandtasktoquartiles[n, task] = quartiles
+        for (n, task), quartiles in nandtasktoquartiles.iteritems():
+            if npsum != task:
+                maxreldiff = self.ntomaxreldiff.get(n, 0)
+                for qi, tq in enumerate(quartiles):
+                    npq = nandtasktoquartiles[n, npsum][qi]
+                    reldiff = (tq - npq) / tq
+                    self.assertTrue(reldiff <= maxreldiff, "(n = %r, task = %r, quartile = %r, reldiff = %r, maxreldiff = %r)" % (n, task, 1+qi, reldiff, maxreldiff))
 
 if '__main__' == __name__:
     unittest.main()
