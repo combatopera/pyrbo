@@ -302,7 +302,7 @@ def %(name)s(%(cparams)s):
                 with open(filepath, 'w') as g:
                     g.write(text)
                     g.flush()
-                log.debug("Compiling: %s", functionname)
+                print >> sys.stderr, "Compiling:", functionname
             importlib.import_module(fqmodulename)
         return Complete(getattr(sys.modules[fqmodulename], functionname))
 
