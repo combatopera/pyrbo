@@ -199,7 +199,7 @@ class Variant:
             paramtoarg[param] = decorated.placeholdertoresolver[param](args)
         return Variant(decorated, paramtoarg)
 
-class Decorated:
+class Decorated(object):
 
     template = '''cimport numpy as np
 import cython
@@ -306,6 +306,9 @@ def %(name)s(%(cparams)s):
             importlib.import_module(fqmodulename)
         return Complete(getattr(sys.modules[fqmodulename], functionname))
 
+    def __repr__(self):
+        return "%s(<function %s>)" % (type(self).__name__, self.name)
+
 class Complete(object):
 
     def __init__(self, f):
@@ -316,6 +319,9 @@ class Complete(object):
 
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
+
+    def __repr__(self):
+        return "%s(%r)" % (type(self).__name__, self.f)
 
 def partialorcomplete(decorated, variant):
     if variant.unbound:
@@ -338,6 +344,9 @@ class Partial(object):
 
     def __get__(self, instance, owner):
         return lambda *args, **kwargs: self(instance, *args, **kwargs)
+
+    def __repr__(self):
+        return "%s(%r)" % (type(self).__name__, self.decorated)
 
 class Decorator:
 
