@@ -15,9 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, sys, os, logging
+import inspect, re, importlib, sys, os, logging, common
 from unroll import unroll
-from common import BadArgException, NoSuchVariableException, NoSuchPlaceholderException, AlreadyBoundException
 
 log = logging.getLogger(__name__)
 
@@ -74,7 +73,7 @@ class Obj:
         self.o = o
 
     def typename(self):
-        raise BadArgException(self.o)
+        raise common.BadArgException(self.o)
 
     def discriminator(self):
         return str(self.o)
@@ -186,9 +185,9 @@ class Variant:
 
     def spinoff(self, decorated, param, arg):
         if param not in decorated.placeholders:
-            raise NoSuchPlaceholderException(param)
+            raise common.NoSuchPlaceholderException(param)
         if param in self.paramtoarg:
-            raise AlreadyBoundException(param, self.paramtoarg[param].unwrap(), arg.unwrap())
+            raise common.AlreadyBoundException(param, self.paramtoarg[param].unwrap(), arg.unwrap())
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
         return Variant(decorated, paramtoarg)
@@ -235,7 +234,7 @@ def %(name)s(%(cparams)s):
         for name, typespec in nametotypespec.iteritems():
             if name not in varnames:
                 if not typespec.ispotentialconst():
-                    raise NoSuchVariableException(name)
+                    raise common.NoSuchVariableException(name)
                 self.constnames.append(name) # We'll make a DEF for it.
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
