@@ -18,7 +18,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from pyrbo import turbo, X
+from leaf import turbo, X
 
 self_x = None
 

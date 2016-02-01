@@ -18,9 +18,8 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division # Required by tests script.
-import numpy as np
-import unittest
-from pyrbo import turbo, T
+import numpy as np, unittest
+from leaf import turbo, T
 
 def pytrue(x, y):
     return x / y

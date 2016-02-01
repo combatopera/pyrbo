@@ -17,9 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import unittest
-from pyrbo import turbo, T, U, X
+import numpy as np, unittest
+from leaf import turbo, T, U, X
 
 @turbo(x = [T], y = [U], n = np.uint32)
 def addxtoy(x, y, n):

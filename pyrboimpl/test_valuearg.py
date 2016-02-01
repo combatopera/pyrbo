@@ -17,23 +17,31 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-import unittest
-from pyrbo import turbo, T
+import numpy as np, unittest
+from leaf import turbo, T, X, Y
+from common import BadArgException
 
-@turbo(a = [[T]])
-def multidim(a):
-    return a[0], a[1], a[2], a[3]
+y = None
 
-class TestMultiDim(unittest.TestCase):
+@turbo(x = T, y = Y)
+def turbotuple(x):
+    return x, y
+
+@turbo(v = [X])
+def arrayof(v):
+    pass
+
+class TestValueArg(unittest.TestCase):
 
     def test_works(self):
-        a = np.empty((2, 2), dtype = np.float32)
-        a[0, 0] = 1
-        a[0, 1] = 2
-        a[1, 0] = 3
-        a[1, 1] = 4
-        self.assertEqual((1, 2, 3, 4), multidim(a))
+        self.assertEqual((-5, 6), turbotuple[T, np.int32][Y, 6](-5))
+
+    def test_arrayof(self):
+        try:
+            arrayof[X, 100]
+            self.fail("Expected bad arg.")
+        except BadArgException, e:
+            self.assertEqual((100,), e.args)
 
 if '__main__' == __name__:
     unittest.main()
