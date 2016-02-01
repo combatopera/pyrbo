@@ -41,6 +41,13 @@ def gsum(n, x, y, out):
     for i in xrange(n):
         out[i] = x[i] + y[i]
 
+class Cls:
+
+    @turbo(self = {}, i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T])
+    def oogsum(self, n, x, y, out):
+        for i in xrange(n):
+            out[i] = x[i] + y[i]
+
 class TestTurbo(unittest.TestCase):
 
     def test_works(self):
@@ -49,7 +56,7 @@ class TestTurbo(unittest.TestCase):
         y = np.arange(n, dtype = np.float32) * 2
         expected = np.empty(n, dtype = np.float32)
         pysum(n, x, y, expected)
-        for task in npsum, tsum, gsum[T, np.float32]:
+        for task in npsum, tsum, gsum[T, np.float32], gsum, Cls().oogsum:
             actual = np.empty(n, dtype = np.float32)
             task(n, x, y, actual)
             self.assertTrue(np.array_equal(expected, actual))
