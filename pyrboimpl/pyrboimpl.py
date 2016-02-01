@@ -322,6 +322,15 @@ class Complete(object):
     def __repr__(self):
         return "%s(%r)" % (type(self).__name__, self.f)
 
+class InstanceComplete:
+
+    def __init__(self, instance, f):
+        self.instance = instance
+        self.f = f
+
+    def __call__(self, *args, **kwargs):
+        return self.f(self.instance, *args, **kwargs)
+
 def partialorcomplete(decorated, variant):
     if variant.unbound:
         return Partial(decorated, variant)
@@ -342,10 +351,28 @@ class Partial(object):
         return self.decorated.getcomplete(self.variant.complete(self.decorated, args))(*args, **kwargs)
 
     def __get__(self, instance, owner):
-        return lambda *args, **kwargs: self(instance, *args, **kwargs)
+        return InstancePartial(instance, self.decorated, self.variant)
 
     def __repr__(self):
         return "%s(%r)" % (type(self).__name__, self.decorated)
+
+class InstancePartial:
+
+    def __init__(self, instance, decorated, variant):
+        self.instance = instance
+        self.decorated = decorated
+        self.variant = variant
+
+    def __call__(self, *args, **kwargs):
+        return self.decorated.getcomplete(self.variant.complete(self.decorated, (self.instance,) + args))(self.instance, *args, **kwargs)
+
+    def __getitem__(self, (param, arg)):
+        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
+        variant = self.variant.spinoff(self.decorated, param, arg)
+        if variant.unbound:
+            return InstancePartial(self.instance, self.decorated, variant)
+        else:
+            return InstanceComplete(self.instance, self.decorated.getcomplete(variant))
 
 class Decorator:
 
