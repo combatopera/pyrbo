@@ -19,7 +19,7 @@
 
 from __future__ import division
 import numpy as np, time, unittest, logging
-from pkg.test_mymod import tsum, gsum, T
+from test_mymod import tsum, gsum, T
 
 log = logging.getLogger(__name__)
 
