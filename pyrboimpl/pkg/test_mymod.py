@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pyven
 
 # Copyright 2014 Andrzej Cichocki
 
@@ -17,9 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest
-import numpy as np
-from mymod import tsum, gsum, T
+import unittest, numpy as np
+from pyrbo import turbo, T
 
 def pysum(n, x, y, out):
     for i in xrange(n):
@@ -28,6 +27,16 @@ def pysum(n, x, y, out):
 def npsum(n, x, y, out):
     out[:n] = x[:n]
     out[:n] += y[:n]
+
+@turbo(i = np.uint32, n = np.uint32, x = [np.float32], y = [np.float32], out = [np.float32])
+def tsum(n, x, y, out):
+    for i in xrange(n):
+        out[i] = x[i] + y[i]
+
+@turbo(i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T])
+def gsum(n, x, y, out):
+    for i in xrange(n):
+        out[i] = x[i] + y[i]
 
 class TestTurbo(unittest.TestCase):
 
