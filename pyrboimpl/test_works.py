@@ -56,7 +56,7 @@ class TestTurbo(unittest.TestCase):
         y = np.arange(n, dtype = np.float32) * 2
         expected = np.empty(n, dtype = np.float32)
         pysum(n, x, y, expected)
-        for task in npsum, tsum, gsum[T, np.float32], gsum, Cls().oogsum:
+        for task in npsum, tsum, gsum[T, np.float32], gsum, Cls().oogsum, Cls().oogsum[T, np.float32]:
             actual = np.empty(n, dtype = np.float32)
             task(n, x, y, actual)
             self.assertTrue(np.array_equal(expected, actual))
