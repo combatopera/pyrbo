@@ -59,7 +59,7 @@ class TestSpeed(unittest.TestCase):
     ntomaxreldiff = {100: .1} # I guess in small array case we see some setup overhead.
 
     def test_fastenough(self):
-        quarter = 3
+        quarter = 4
         nandtasktoquartiles = {}
         for n in 100, 1000, 10000, 100000:
             log.info("n: %s", n)
