@@ -15,10 +15,22 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-class BadArgException(Exception): pass
+class BadArgException(Exception):
 
-class NoSuchVariableException(Exception): pass
+    def __init__(self, obj):
+        Exception.__init__(self, obj)
 
-class NoSuchPlaceholderException(Exception): pass
+class NoSuchVariableException(Exception):
 
-class AlreadyBoundException(Exception): pass
+    def __init__(self, name):
+        Exception.__init__(self, name)
+
+class NoSuchPlaceholderException(Exception):
+
+    def __init__(self, param):
+        Exception.__init__(self, param)
+
+class AlreadyBoundException(Exception):
+
+    def __init__(self, param, current, given):
+        Exception.__init__(self, param, current, given)
