@@ -34,3 +34,13 @@ globals().update([p.name, p] for p in (pyrboimpl.Placeholder(chr(i)) for i in xr
 
 def turbo(**nametotypespec):
     return pyrboimpl.Decorator(nametotypespec)
+
+class generic(type):
+
+    def __getitem__(cls, (param, arg)):
+        members = {}
+        for name, method in cls.__dict__.iteritems():
+            if isinstance(method, pyrboimpl.Partial) and param in method.variant.unbound:
+                method = method[param, arg]
+            members[name] = method
+        return cls.__metaclass__('FIXME', cls.__bases__, members)
