@@ -38,12 +38,12 @@ def turbo(**nametotypespec):
 class ClassVariant:
 
     @classmethod
-    def create(cls, t):
+    def create(cvcls, cls):
         placeholders = set()
-        for member in t.__dict__.itervalues():
+        for member in cls.__dict__.itervalues():
             if isinstance(member, pyrboimpl.Partial):
                 placeholders.update(member.decorated.placeholders)
-        return cls(t.__name__, placeholders, {})
+        return cvcls(cls.__name__, placeholders, {})
 
     def __init__(self, basename, placeholders, paramtoarg):
         self.basename = basename
