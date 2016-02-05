@@ -51,18 +51,23 @@ class ClassVariant:
         self.paramtoarg = paramtoarg
 
     def spinoff(self, param, arg):
+        if param not in self.placeholders:
+            raise pyrboimpl.common.NoSuchPlaceholderException(param)
+        if param in self.paramtoarg:
+            raise pyrboimpl.common.AlreadyBoundException(param, self.paramtoarg[param].unwrap(), arg.unwrap())
         paramtoarg = self.paramtoarg.copy()
-        paramtoarg[param] = pyrboimpl.Type(arg) if isinstance(arg, type) else pyrboimpl.Obj(arg)
+        paramtoarg[param] = arg
         return ClassVariant(self.basename, self.placeholders, paramtoarg)
 
 class basegeneric(type):
 
     def __getitem__(cls, (param, arg)):
-        members = {}
-        members['variant'] = variant = cls.variant.spinoff(param, arg)
+        arg = pyrboimpl.Type(arg) if isinstance(arg, type) else pyrboimpl.Obj(arg)
+        variant = cls.turbo_variant.spinoff(param, arg)
+        members = dict(turbo_variant = variant)
         for name, member in cls.__dict__.iteritems():
             if isinstance(member, pyrboimpl.Partial) and param in member.variant.unbound:
-                member = member[param, arg]
+                member = member[param, arg.unwrap()]
             members[name] = member
         words = [variant.basename]
         for param in sorted(variant.placeholders):
@@ -73,5 +78,5 @@ class generic(basegeneric):
 
     def __new__(self, name, bases, members):
         cls = basegeneric.__new__(self, name, bases, members)
-        cls.variant = ClassVariant.create(cls)
+        cls.turbo_variant = ClassVariant.create(cls)
         return cls
