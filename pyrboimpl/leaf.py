@@ -72,6 +72,6 @@ class basegeneric(type):
 class generic(basegeneric):
 
     def __new__(self, name, bases, members):
-        cls = type.__new__(self, name, bases, members)
+        cls = basegeneric.__new__(self, name, bases, members)
         cls.variant = ClassVariant.create(cls)
         return cls
