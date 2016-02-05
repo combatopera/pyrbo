@@ -64,11 +64,12 @@ class basegeneric(type):
     def __getitem__(cls, (param, arg)):
         arg = pyrboimpl.Type(arg) if isinstance(arg, type) else pyrboimpl.Obj(arg)
         variant = cls.turbo_variant.spinoff(param, arg)
-        members = dict(turbo_variant = variant)
+        members = {}
         for name, member in cls.__dict__.iteritems():
             if isinstance(member, pyrboimpl.Partial) and param in member.variant.unbound:
                 member = member[param, arg.unwrap()]
             members[name] = member
+        members['turbo_variant'] = variant
         words = [variant.basename]
         for param in sorted(variant.placeholders):
             words.append(variant.paramtoarg[param].discriminator() if param in variant.paramtoarg else '?')
