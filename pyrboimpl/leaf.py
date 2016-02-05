@@ -57,17 +57,18 @@ class ClassVariant:
 
 class generic(type):
 
+    def __new__(self, name, bases, members):
+        cls = type.__new__(self, name, bases, members)
+        cls.variant = ClassVariant.create(cls)
+        return cls
+
     def __getitem__(cls, (param, arg)):
-        try:
-            variant = cls.variant
-        except AttributeError:
-            cls.variant = variant = ClassVariant.create(cls)
         members = {}
+        members['variant'] = variant = cls.variant.spinoff(param, arg)
         for name, member in cls.__dict__.iteritems():
             if isinstance(member, pyrboimpl.Partial) and param in member.variant.unbound:
                 member = member[param, arg]
             members[name] = member
-        members['variant'] = variant = variant.spinoff(param, arg)
         words = [variant.basename]
         for param in sorted(variant.placeholders):
             words.append(variant.paramtoarg[param].discriminator() if param in variant.paramtoarg else '?')
