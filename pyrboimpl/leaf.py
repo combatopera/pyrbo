@@ -35,12 +35,40 @@ globals().update([p.name, p] for p in (pyrboimpl.Placeholder(chr(i)) for i in xr
 def turbo(**nametotypespec):
     return pyrboimpl.Decorator(nametotypespec)
 
+class ClassVariant:
+
+    @classmethod
+    def create(cls, t):
+        placeholders = set()
+        for member in t.__dict__.itervalues():
+            if isinstance(member, pyrboimpl.Partial):
+                placeholders.update(member.decorated.placeholders)
+        return cls(t.__name__, placeholders, {})
+
+    def __init__(self, basename, placeholders, paramtoarg):
+        self.basename = basename
+        self.placeholders = placeholders
+        self.paramtoarg = paramtoarg
+
+    def spinoff(self, param, arg):
+        paramtoarg = self.paramtoarg.copy()
+        paramtoarg[param] = pyrboimpl.Type(arg) if isinstance(arg, type) else pyrboimpl.Obj(arg)
+        return ClassVariant(self.basename, self.placeholders, paramtoarg)
+
 class generic(type):
 
     def __getitem__(cls, (param, arg)):
+        try:
+            variant = cls.variant
+        except AttributeError:
+            cls.variant = variant = ClassVariant.create(cls)
         members = {}
-        for name, method in cls.__dict__.iteritems():
-            if isinstance(method, pyrboimpl.Partial) and param in method.variant.unbound:
-                method = method[param, arg]
-            members[name] = method
-        return cls.__metaclass__('FIXME', cls.__bases__, members)
+        for name, member in cls.__dict__.iteritems():
+            if isinstance(member, pyrboimpl.Partial) and param in member.variant.unbound:
+                member = member[param, arg]
+            members[name] = member
+        members['variant'] = variant = variant.spinoff(param, arg)
+        words = [variant.basename]
+        for param in sorted(variant.placeholders):
+            words.append(variant.paramtoarg[param].discriminator() if param in variant.paramtoarg else '?')
+        return cls.__metaclass__('_'.join(words), cls.__bases__, members)
