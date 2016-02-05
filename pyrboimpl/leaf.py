@@ -55,12 +55,7 @@ class ClassVariant:
         paramtoarg[param] = pyrboimpl.Type(arg) if isinstance(arg, type) else pyrboimpl.Obj(arg)
         return ClassVariant(self.basename, self.placeholders, paramtoarg)
 
-class generic(type):
-
-    def __new__(self, name, bases, members):
-        cls = type.__new__(self, name, bases, members)
-        cls.variant = ClassVariant.create(cls)
-        return cls
+class basegeneric(type):
 
     def __getitem__(cls, (param, arg)):
         members = {}
@@ -72,4 +67,11 @@ class generic(type):
         words = [variant.basename]
         for param in sorted(variant.placeholders):
             words.append(variant.paramtoarg[param].discriminator() if param in variant.paramtoarg else '?')
-        return cls.__metaclass__('_'.join(words), cls.__bases__, members)
+        return basegeneric('_'.join(words), cls.__bases__, members)
+
+class generic(basegeneric):
+
+    def __new__(self, name, bases, members):
+        cls = type.__new__(self, name, bases, members)
+        cls.variant = ClassVariant.create(cls)
+        return cls
