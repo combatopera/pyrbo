@@ -81,3 +81,6 @@ class generic(basegeneric):
         cls = basegeneric.__new__(self, name, bases, members)
         cls.turbo_variant = ClassVariant.create(cls)
         return cls
+
+def dynamic(x):
+    return x.todynamic()

@@ -34,3 +34,8 @@ class AlreadyBoundException(Exception):
 
     def __init__(self, param, current, given):
         Exception.__init__(self, param, current, given)
+
+class NotDynamicException(Exception):
+
+    def __init__(self, name):
+        Exception.__init__(self, name)
