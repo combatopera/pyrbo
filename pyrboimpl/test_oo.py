@@ -18,7 +18,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from leaf import turbo, X
+from leaf import turbo, X, dynamic
 
 self_x = None
 
@@ -32,6 +32,7 @@ class My:
         z = self_x + y
         return z
 
+    @dynamic
     @turbo(self = dict(x = X), y = X, z = X)
     def plus2(self, y):
         z = self_x + y
