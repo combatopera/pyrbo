@@ -24,6 +24,10 @@ from leaf import turbo, T
 def f(v):
     pass
 
+@turbo(x = T)
+def f2(x):
+    pass
+
 class TestExact(unittest.TestCase):
 
     def test_exact(self):
@@ -42,6 +46,9 @@ class TestExact(unittest.TestCase):
                         self.fail('Expected value error.')
                     except ValueError:
                         pass
+                g2 = f2[T, t]
+                x = u(10)
+                g2(x) # All conversions allowed, including narrowing.
 
 if '__main__' == __name__:
     unittest.main()
