@@ -18,9 +18,10 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from leaf import turbo, X, dynamic
+from leaf import turbo, X, dynamic, T, U, Z, generic
+from common import NoSuchPlaceholderException, AlreadyBoundException
 
-self_x = None
+self_u = self_x = None
 
 class My:
 
@@ -44,6 +45,45 @@ class TestOO(unittest.TestCase):
         my = My(5)
         self.assertEqual(11, my.plus(6))
         self.assertEqual(11, my.plus2(6))
+
+class Buf:
+
+    __metaclass__ = generic
+
+    def __init__(self, u):
+        self.u = u
+
+    @dynamic
+    @turbo(self = dict(u = [T]), i = np.uint32, j = np.uint32, v = U)
+    def fillpart(self, i, j, v):
+        while i < j:
+            self_u[i] = v
+            i += 1
+
+class TestBuf(unittest.TestCase):
+
+    def test_works(self):
+        t = np.uint16
+        u = np.int32
+        tbuf = Buf[T, t]
+        ubuf = Buf[U, u]
+        names = ['Buf', 'Buf_uint16_?', 'Buf_?_int32', 'Buf_uint16_int32', 'Buf_uint16_int32']
+        for bufcls in Buf, tbuf, ubuf, tbuf[U, u], ubuf[T, t]:
+            self.assertEqual(names.pop(0), bufcls.__name__)
+            v = np.zeros(10, dtype = t)
+            buf = bufcls(v)
+            buf.fillpart(4, 6, 5)
+            self.assertEqual([0, 0, 0, 0, 5, 5, 0, 0, 0, 0], list(v))
+        try:
+            Buf[Z, None]
+            self.fail('Expected no such placeholder.')
+        except NoSuchPlaceholderException, e:
+            self.assertEqual((Z,), e.args)
+        try:
+            tbuf[T, TestBuf]
+            self.fail('Expected already bound.')
+        except AlreadyBoundException, e:
+            self.assertEqual((T, t, TestBuf), e.args)
 
 if '__main__' == __name__:
     unittest.main()
