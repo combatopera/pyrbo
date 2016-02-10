@@ -65,12 +65,15 @@ class TestTurbo(unittest.TestCase):
 
 class TestSpeed(unittest.TestCase):
 
-    ntomaxreldiff = {100: .1} # I guess in small array case we see some setup overhead.
+    ntomaxreltime = {100: 1.2, 1000: 1.2} # I guess in small array case we see some setup overhead.
 
     def test_fastenough(self):
-        quarter = 4
-        nandtasktoquartiles = {}
-        for n in 100, 1000, 10000, 100000:
+        trials = 20
+        outliers = 2
+        meanof = lambda v: sum(v) / len(v)
+        nandtasktotimes = {}
+        for n in xrange(2, 6):
+            n = 10 ** n
             log.info("n: %s", n)
             x = np.arange(n, dtype = np.float32)
             y = np.arange(n, dtype = np.float32) * 2
@@ -78,21 +81,18 @@ class TestSpeed(unittest.TestCase):
                 log.info("task: %s", task)
                 out = np.empty(n, dtype = np.float32)
                 times = []
-                for _ in xrange(quarter * 4):
+                for _ in xrange(trials):
                     t = time.time()
                     task(n, x, y, out)
-                    times.append(time.time() - t)
+                    times.append((time.time() - t) * 1000)
                 times.sort()
-                quartiles = [(times[quarter * q - 1] + times[quarter * q]) / 2 for q in [1, 2, 3]]
-                log.info("quartiles: %s", ' '.join("%.9f" % q for q in quartiles))
-                nandtasktoquartiles[n, task] = quartiles
-        for (n, task), quartiles in nandtasktoquartiles.iteritems():
+                log.info("trials: %s", ' '.join("%.6f" % q for q in times))
+                nandtasktotimes[n, task] = times[outliers:-outliers]
+        for (n, task), times in nandtasktotimes.iteritems():
             if npsum != task:
-                maxreldiff = self.ntomaxreldiff.get(n, 0)
-                for qi, tq in enumerate(quartiles):
-                    npq = nandtasktoquartiles[n, npsum][qi]
-                    reldiff = (tq - npq) / tq
-                    self.assertTrue(reldiff <= maxreldiff, "(n = %r, task = %r, quartile = %r, reldiff = %r, maxreldiff = %r)" % (n, task, 1+qi, reldiff, maxreldiff))
+                maxreltime = self.ntomaxreltime.get(n, 1)
+                reltime = meanof(times) / meanof(nandtasktotimes[n, npsum])
+                self.assertTrue(reltime <= maxreltime, "(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
 
 if '__main__' == __name__:
     unittest.main()
