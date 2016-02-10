@@ -102,10 +102,10 @@ class Array:
         else:
             yield "cdef np.%s_t* %s" % (elementtypename, name)
 
-    def iternestedcdefs(self, variant, parent, name):
+    def iternestedcdefs(self, variant, undparent, dotparent, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        yield "cdef np.ndarray[np.%s_t%s] py_%s_%s = %s.%s" % (elementtypename, self.ndimtext, parent, name, parent, name)
-        yield "cdef np.%s_t* %s_%s = &py_%s_%s[%s]" % (elementtypename, parent, name, parent, name, self.zeros)
+        yield "cdef np.ndarray[np.%s_t%s] py_%s_%s = %s.%s" % (elementtypename, self.ndimtext, undparent, name, dotparent, name)
+        yield "cdef np.%s_t* %s_%s = &py_%s_%s[%s]" % (elementtypename, undparent, name, undparent, name, self.zeros)
 
     def iterplaceholders(self):
         if self.elementtypespec.isplaceholder:
@@ -128,9 +128,9 @@ class Scalar:
             typename = self.typespec.resolvedarg(variant).typename()
             yield "cdef np.%s_t %s" % (typename, name)
 
-    def iternestedcdefs(self, variant, parent, name):
+    def iternestedcdefs(self, variant, undparent, dotparent, name):
         typename = self.typespec.resolvedarg(variant).typename()
-        yield "cdef np.%s_t %s_%s = %s.%s" % (typename, parent, name, parent, name)
+        yield "cdef np.%s_t %s_%s = %s.%s" % (typename, undparent, name, dotparent, name)
 
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
@@ -149,13 +149,20 @@ class Composite:
 
     def itercdefs(self, variant, name, isfuncparam):
         for field, fieldtype in self.fields:
-            for cdef in fieldtype.iternestedcdefs(variant, name, field):
+            for cdef in fieldtype.iternestedcdefs(variant, name, name, field):
                 yield cdef
 
     def iterplaceholders(self):
         for field, fieldtype in self.fields:
             for placeholder, resolver in fieldtype.iterplaceholders():
                 yield placeholder, FieldResolver(field, resolver)
+
+    def iternestedcdefs(self, variant, undparent, dotparent, name):
+        undparent += '_' + name
+        dotparent += '.' + name
+        for field, fieldtype in self.fields:
+            for cdef in fieldtype.iternestedcdefs(variant, undparent, dotparent, field):
+                yield cdef
 
 class FieldResolver:
 
