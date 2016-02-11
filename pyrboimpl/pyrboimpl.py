@@ -292,9 +292,11 @@ def %(name)s(%(cparams)s):
                 typespec = self.nametotypespec[name]
                 cparams.append(typespec.cparam(variant, name))
                 cdefs.extend(typespec.itercdefs(variant, name, True))
+            cdefnames = set(cdef.name for cdef in cdefs)
             for name in self.localnames:
-                typespec = self.nametotypespec[name]
-                cdefs.extend(typespec.itercdefs(variant, name, False))
+                if name not in cdefnames:
+                    typespec = self.nametotypespec[name]
+                    cdefs.extend(typespec.itercdefs(variant, name, False))
             defs = []
             consts = dict([name, self.nametotypespec[name].resolvedobj(variant)] for name in self.constnames)
             for item in consts.iteritems():
