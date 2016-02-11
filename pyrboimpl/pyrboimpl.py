@@ -275,12 +275,13 @@ def %(name)s(%(cparams)s):
         if fqmodulename not in sys.modules:
             cparams = []
             cdefs = []
-            for i, name in enumerate(self.varnames):
+            for name in self.varnames[:self.argcount]:
                 typespec = self.nametotypespec[name]
-                isfuncparam = i < self.argcount
-                if isfuncparam:
-                    cparams.append(typespec.cparam(variant, name))
-                cdefs.extend(typespec.itercdefs(variant, name, isfuncparam))
+                cparams.append(typespec.cparam(variant, name))
+                cdefs.extend(typespec.itercdefs(variant, name, True))
+            for name in self.varnames[self.argcount:]:
+                typespec = self.nametotypespec[name]
+                cdefs.extend(typespec.itercdefs(variant, name, False))
             defs = []
             consts = dict([name, self.nametotypespec[name].resolvedobj(variant)] for name in self.constnames)
             for item in consts.iteritems():
