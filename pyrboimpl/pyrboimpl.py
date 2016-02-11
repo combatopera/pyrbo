@@ -245,6 +245,8 @@ def %(name)s(%(cparams)s):
             if len(bodyindent) != functionindentlen:
                 break
             i += 1
+        if re.search(r'=\s*LOCAL\s*$', lines[i]) is not None:
+            i += 1
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
     def __init__(self, nametotypespec, pyfunc):

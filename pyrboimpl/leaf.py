@@ -84,3 +84,5 @@ class generic(basegeneric):
 
 def dynamic(x):
     return x.todynamic()
+
+LOCAL = None
