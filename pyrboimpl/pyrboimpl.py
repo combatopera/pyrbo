@@ -81,6 +81,15 @@ class Obj:
     def __repr__(self):
         return "%s(%r)" % (self.__class__.__name__, self.o)
 
+class CDef:
+
+    def __init__(self, name, text):
+        self.name = name
+        self.text = text
+
+    def __str__(self):
+        return self.text
+
 class Array:
 
     def __init__(self, elementtypespec, ndim):
@@ -98,14 +107,16 @@ class Array:
     def itercdefs(self, variant, name, isfuncparam):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         if isfuncparam:
-            yield "cdef np.%s_t* %s = &py_%s[%s]" % (elementtypename, name, name, self.zeros)
+            yield CDef(name, "cdef np.%s_t* %s = &py_%s[%s]" % (elementtypename, name, name, self.zeros))
         else:
-            yield "cdef np.%s_t* %s" % (elementtypename, name)
+            yield CDef(name, "cdef np.%s_t* %s" % (elementtypename, name))
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        yield "cdef np.ndarray[np.%s_t%s] py_%s_%s = %s.%s" % (elementtypename, self.ndimtext, undparent, name, dotparent, name)
-        yield "cdef np.%s_t* %s_%s = &py_%s_%s[%s]" % (elementtypename, undparent, name, undparent, name, self.zeros)
+        cname = undparent + '_' + name
+        pyname = 'py_' + cname
+        yield CDef(pyname, "cdef np.ndarray[np.%s_t%s] %s = %s.%s" % (elementtypename, self.ndimtext, pyname, dotparent, name))
+        yield CDef(cname, "cdef np.%s_t* %s = &py_%s_%s[%s]" % (elementtypename, cname, undparent, name, self.zeros))
 
     def iterplaceholders(self):
         if self.elementtypespec.isplaceholder:
@@ -126,11 +137,12 @@ class Scalar:
     def itercdefs(self, variant, name, isfuncparam):
         if not isfuncparam:
             typename = self.typespec.resolvedarg(variant).typename()
-            yield "cdef np.%s_t %s" % (typename, name)
+            yield CDef(name, "cdef np.%s_t %s" % (typename, name))
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         typename = self.typespec.resolvedarg(variant).typename()
-        yield "cdef np.%s_t %s_%s = %s.%s" % (typename, undparent, name, dotparent, name)
+        cname = undparent + '_' + name
+        yield CDef(cname, "cdef np.%s_t %s = %s.%s" % (typename, cname, dotparent, name))
 
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
