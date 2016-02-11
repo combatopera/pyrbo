@@ -102,7 +102,8 @@ class Array:
 
     def cparam(self, variant, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        return "np.ndarray[np.%s_t%s] py_%s" % (elementtypename, self.ndimtext, name)
+        name = 'py_' + name
+        return CDef(name, "np.ndarray[np.%s_t%s] %s" % (elementtypename, self.ndimtext, name))
 
     def itercdefs(self, variant, name, isfuncparam):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
@@ -132,7 +133,7 @@ class Scalar:
 
     def cparam(self, variant, name):
         typename = self.typespec.resolvedarg(variant).typename()
-        return "np.%s_t %s" % (typename, name)
+        return CDef(name, "np.%s_t %s" % (typename, name))
 
     def itercdefs(self, variant, name, isfuncparam):
         if not isfuncparam:
@@ -157,7 +158,7 @@ class Composite:
         self.fields = sorted(fields.iteritems())
 
     def cparam(self, variant, name):
-        return name
+        return CDef(name, name)
 
     def itercdefs(self, variant, name, isfuncparam):
         for field, fieldtype in self.fields:
@@ -294,7 +295,8 @@ def %(name)s(%(cparams)s):
                 typespec = self.nametotypespec[name]
                 cparams.append(typespec.cparam(variant, name))
                 cdefs.extend(typespec.itercdefs(variant, name, True))
-            cdefnames = set(cdef.name for cdef in cdefs)
+            cdefnames = set(cdef.name for cdef in cparams)
+            cdefnames.update(cdef.name for cdef in cdefs)
             for name in self.localnames:
                 if name not in cdefnames:
                     typespec = self.nametotypespec[name]
@@ -309,7 +311,7 @@ def %(name)s(%(cparams)s):
             text = self.template % dict(
                 defs = ''.join(defs),
                 name = functionname,
-                cparams = ', '.join(cparams),
+                cparams = ', '.join(str(p) for p in cparams),
                 code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
             )
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
