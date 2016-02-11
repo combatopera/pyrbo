@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, sys, os, logging, common
+import inspect, re, importlib, sys, os, logging, common, itertools
 from unroll import unroll
 
 log = logging.getLogger(__name__)
@@ -236,27 +236,28 @@ def %(name)s(%(cparams)s):
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
     def __init__(self, nametotypespec, pyfunc):
-        # The varnames are the locals including params:
-        self.varnames = [n for n in pyfunc.func_code.co_varnames if 'UNROLL' != n]
+        co_varnames = pyfunc.func_code.co_varnames # The params followed by the locals.
+        co_argcount = pyfunc.func_code.co_argcount
+        self.paramnames = co_varnames[:co_argcount]
+        self.localnames = [n for n in co_varnames[co_argcount:] if 'UNROLL' != n]
         self.constnames = []
-        varnames = set(self.varnames)
+        allnames = set(itertools.chain(self.paramnames, self.localnames))
         for name, typespec in nametotypespec.iteritems():
-            if name not in varnames:
+            if name not in allnames:
                 if not typespec.ispotentialconst():
                     raise common.NoSuchVariableException(name)
                 self.constnames.append(name) # We'll make a DEF for it.
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
-        self.argcount = pyfunc.func_code.co_argcount
         # Note placeholders includes those in consts, placeholdertoresolver does not:
         self.placeholders = set()
         for typespec in nametotypespec.itervalues():
             for param, _ in typespec.iterplaceholders():
                 self.placeholders.add(param)
         self.placeholdertoresolver = {}
-        for i in xrange(self.argcount):
-            for placeholder, resolver in nametotypespec[self.varnames[i]].iterplaceholders():
+        for i, name in enumerate(self.paramnames):
+            for placeholder, resolver in nametotypespec[name].iterplaceholders():
                 if placeholder not in self.placeholdertoresolver:
                     self.placeholdertoresolver[placeholder] = PositionalResolver(i, resolver)
         self.suffixtocomplete = {}
@@ -275,11 +276,11 @@ def %(name)s(%(cparams)s):
         if fqmodulename not in sys.modules:
             cparams = []
             cdefs = []
-            for name in self.varnames[:self.argcount]:
+            for name in self.paramnames:
                 typespec = self.nametotypespec[name]
                 cparams.append(typespec.cparam(variant, name))
                 cdefs.extend(typespec.itercdefs(variant, name, True))
-            for name in self.varnames[self.argcount:]:
+            for name in self.localnames:
                 typespec = self.nametotypespec[name]
                 cdefs.extend(typespec.itercdefs(variant, name, False))
             defs = []
