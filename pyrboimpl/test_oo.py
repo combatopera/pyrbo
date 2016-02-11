@@ -18,10 +18,8 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from leaf import turbo, X, dynamic, T, U, Z, generic
+from leaf import turbo, X, dynamic, T, U, Z, generic, LOCAL
 from common import NoSuchPlaceholderException, AlreadyBoundException
-
-self_u = self_x = None
 
 class My:
 
@@ -30,12 +28,14 @@ class My:
 
     @turbo(self = dict(x = np.int8), y = np.int8, z = np.int8)
     def plus(self, y):
+        self_x = LOCAL
         z = self_x + y
         return z
 
     @dynamic
     @turbo(self = dict(x = X), y = X, z = X)
     def plus2(self, y):
+        self_x = LOCAL
         z = self_x + y
         return z
 
@@ -69,6 +69,7 @@ class Buf:
     @dynamic
     @turbo(self = dict(u = [T]), i = np.uint32, j = np.uint32, v = U)
     def fillpart(self, i, j, v):
+        self_u = LOCAL
         while i < j:
             self_u[i] = v
             i += 1
