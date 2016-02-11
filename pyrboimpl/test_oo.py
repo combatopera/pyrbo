@@ -42,6 +42,8 @@ class My:
 @turbo(obj = dict(field = int))
 def fieldlocal(obj):
     obj_field = 6
+    if False:
+        obj.field = obj_field
 
 class TestOO(unittest.TestCase):
 
