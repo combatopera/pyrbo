@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env pyven
 
 # Copyright 2014 Andrzej Cichocki
 
@@ -39,12 +39,23 @@ class My:
         z = self_x + y
         return z
 
+@turbo(obj = dict(field = int))
+def fieldlocal(obj):
+    obj_field = 6
+
 class TestOO(unittest.TestCase):
 
     def test_works(self):
         my = My(5)
         self.assertEqual(11, my.plus(6))
         self.assertEqual(11, my.plus2(6))
+
+    def test_fieldlocal(self):
+        class Obj: pass
+        obj = Obj()
+        obj.field = 5
+        fieldlocal(obj)
+        self.assertEqual(5, obj.field)
 
 class Buf:
 
