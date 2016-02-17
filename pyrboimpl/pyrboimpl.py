@@ -212,8 +212,8 @@ class Variant:
         paramtoarg[param] = arg
         return Variant(decorated, paramtoarg)
 
-    def complete(self, decorated, dynamic, args):
-        if not dynamic:
+    def complete(self, decorated, args):
+        if not decorated.dynamic:
             raise common.NotDynamicException(decorated.name)
         paramtoarg = self.paramtoarg.copy()
         for param in self.unbound:
@@ -250,7 +250,7 @@ def %(name)s(%(cparams)s):
             i += 1
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
-    def __init__(self, nametotypespec, pyfunc):
+    def __init__(self, nametotypespec, dynamic, pyfunc):
         co_varnames = pyfunc.func_code.co_varnames # The params followed by the locals.
         co_argcount = pyfunc.func_code.co_argcount
         self.paramnames = co_varnames[:co_argcount]
@@ -277,6 +277,7 @@ def %(name)s(%(cparams)s):
                     self.placeholdertoresolver[placeholder] = PositionalResolver(i, resolver)
         self.suffixtocomplete = {}
         self.nametotypespec = nametotypespec
+        self.dynamic = dynamic
 
     def getcomplete(self, variant):
         try:
@@ -360,57 +361,55 @@ class InstanceComplete:
     def __call__(self, *args, **kwargs):
         return self.f(self.instance, *args, **kwargs)
 
-def partialorcomplete(decorated, variant, dynamic):
+def partialorcomplete(decorated, variant):
     if variant.unbound:
-        return Partial(decorated, variant, dynamic)
+        return Partial(decorated, variant)
     else:
         return decorated.getcomplete(variant)
 
 class Partial(object):
 
-    def __init__(self, decorated, variant, dynamic):
+    def __init__(self, decorated, variant):
         self.decorated = decorated
         self.variant = variant
-        self.dynamic = dynamic
 
     def todynamic(self):
         return Partial(self.decorated, self.variant, True)
 
     def __getitem__(self, (param, arg)):
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
-        return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg), self.dynamic)
+        return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
 
     def __call__(self, *args, **kwargs):
-        return self.decorated.getcomplete(self.variant.complete(self.decorated, self.dynamic, args))(*args, **kwargs)
+        return self.decorated.getcomplete(self.variant.complete(self.decorated, args))(*args, **kwargs)
 
     def __get__(self, instance, owner):
-        return InstancePartial(instance, self.decorated, self.variant, self.dynamic)
+        return InstancePartial(instance, self.decorated, self.variant)
 
     def __repr__(self):
         return "%s(%r)" % (type(self).__name__, self.decorated)
 
 class InstancePartial:
 
-    def __init__(self, instance, decorated, variant, dynamic):
+    def __init__(self, instance, decorated, variant):
         self.instance = instance
         self.decorated = decorated
         self.variant = variant
-        self.dynamic = dynamic
 
     def __call__(self, *args, **kwargs):
-        return self.decorated.getcomplete(self.variant.complete(self.decorated, self.dynamic, (self.instance,) + args))(self.instance, *args, **kwargs)
+        return self.decorated.getcomplete(self.variant.complete(self.decorated, (self.instance,) + args))(self.instance, *args, **kwargs)
 
     def __getitem__(self, (param, arg)):
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         variant = self.variant.spinoff(self.decorated, param, arg)
         if variant.unbound:
-            return InstancePartial(self.instance, self.decorated, variant, self.dynamic)
+            return InstancePartial(self.instance, self.decorated, variant)
         else:
             return InstanceComplete(self.instance, self.decorated.getcomplete(variant))
 
 class Decorator:
 
-    def __init__(self, nametotypespec):
+    def __init__(self, nametotypespec, dynamic):
         def wrap(spec):
             return spec if isinstance(spec, Placeholder) else Type(spec)
         def iternametotypespec(nametotypespec):
@@ -428,7 +427,8 @@ class Decorator:
                     typespec = Scalar(wrap(typespec))
                 yield name, typespec
         self.nametotypespec = dict(iternametotypespec(nametotypespec))
+        self.dynamic = dynamic
 
     def __call__(self, pyfunc):
-        decorated = Decorated(self.nametotypespec, pyfunc)
-        return partialorcomplete(decorated, Variant(decorated, {}), False)
+        decorated = Decorated(self.nametotypespec, self.dynamic, pyfunc)
+        return partialorcomplete(decorated, Variant(decorated, {}))

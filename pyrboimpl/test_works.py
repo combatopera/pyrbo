@@ -19,7 +19,7 @@
 
 from __future__ import division
 import unittest, numpy as np, logging, time
-from leaf import turbo, T, dynamic
+from leaf import turbo, T
 
 log = logging.getLogger(__name__)
 
@@ -36,16 +36,14 @@ def tsum(n, x, y, out):
     for i in xrange(n):
         out[i] = x[i] + y[i]
 
-@dynamic
-@turbo(i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T])
+@turbo(types = dict(i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T]), dynamic = True)
 def gsum(n, x, y, out):
     for i in xrange(n):
         out[i] = x[i] + y[i]
 
 class Cls:
 
-    @dynamic
-    @turbo(self = {}, i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T])
+    @turbo(types = dict(self = {}, i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T]), dynamic = True)
     def oogsum(self, n, x, y, out):
         for i in xrange(n):
             out[i] = x[i] + y[i]

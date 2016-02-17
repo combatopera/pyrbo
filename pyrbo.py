@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrboimpl.leaf import turbo, T, U, V, W, X, Y, Z, generic, dynamic, LOCAL
+from pyrboimpl.leaf import turbo, T, U, V, W, X, Y, Z, generic, LOCAL
 from pyrboimpl.common import BadArgException, NoSuchVariableException, NoSuchPlaceholderException, AlreadyBoundException
 
 assert BadArgException
@@ -32,5 +32,4 @@ assert X
 assert Y
 assert Z
 assert generic
-assert dynamic
 assert not LOCAL

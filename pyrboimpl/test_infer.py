@@ -18,22 +18,19 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np, unittest
-from leaf import turbo, T, U, X, dynamic
+from leaf import turbo, T, U, X
 
-@dynamic
-@turbo(x = [T], y = [U], n = np.uint32)
+@turbo(types = dict(x = [T], y = [U], n = np.uint32), dynamic = True)
 def addxtoy(x, y, n):
     while n:
         n -= 1
         y[n] += x[n]
 
-@dynamic
-@turbo(x = X, y = X)
+@turbo(types = dict(x = X, y = X), dynamic = True)
 def add(x, y):
     return x + y
 
-@dynamic
-@turbo(x = [T], y = [T])
+@turbo(types = dict(x = [T], y = [T]), dynamic = True)
 def noinfer(x, y):
     pass
 
