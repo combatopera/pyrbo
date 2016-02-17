@@ -32,8 +32,12 @@ del pyxinstall
 
 globals().update([p.name, p] for p in (pyrboimpl.Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1)))
 
-def turbo(**nametotypespec):
-    return pyrboimpl.Decorator(nametotypespec)
+def turbo(**kwargs):
+    if 'types' not in kwargs:
+        kwargs = dict(types = kwargs)
+    nametotypespec = kwargs['types']
+    dynamic = kwargs.get('dynamic', False)
+    return pyrboimpl.Decorator(nametotypespec, dynamic)
 
 class ClassVariant:
 
@@ -81,8 +85,5 @@ class generic(basegeneric):
         cls = basegeneric.__new__(self, name, bases, members)
         cls.turbo_variant = ClassVariant.create(cls)
         return cls
-
-def dynamic(x):
-    return x.todynamic()
 
 LOCAL = None
