@@ -331,6 +331,14 @@ def %(name)s(%(cparams)s):
                 with open(filepath, 'w') as g:
                     g.write(text)
                     g.flush()
+                with open(filepath + 'bld', 'w') as g:
+                    g.write('''from distutils.extension import Extension
+import numpy as np
+
+def make_ext(name, source):
+    return Extension(name, [source], include_dirs = [np.get_include()])
+''')
+                    g.flush()
                 print >> sys.stderr, "Compiling:", functionname
             importlib.import_module(fqmodulename)
         return Complete(getattr(sys.modules[fqmodulename], functionname))
