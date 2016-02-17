@@ -1,4 +1,4 @@
 author = 'Andrzej Cichocki'
 name = 'pyrbo'
-projects = 'pyrbo/drone',
+projects = ()
 deps = 'numpy', 'cython'
