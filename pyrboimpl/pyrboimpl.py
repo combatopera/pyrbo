@@ -321,14 +321,13 @@ def %(name)s(%(cparams)s):
                 cparams = ', '.join(str(p) for p in cparams),
                 code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
             )
+            bldtext = self.pyxbld
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
             filepath = os.path.join(fileparent, functionname + '.pyx')
-            if os.path.exists(filepath):
-                with open(filepath) as f:
-                    existingtext = f.read()
-            else:
-                existingtext = None
-            if text != existingtext:
+            bldpath = filepath + 'bld'
+            existingtext = readornone(filepath)
+            existingbld = readornone(bldpath)
+            if text != existingtext or bldtext != existingbld:
                 try:
                     os.mkdir(fileparent)
                 except OSError:
@@ -337,8 +336,8 @@ def %(name)s(%(cparams)s):
                 with open(filepath, 'w') as g:
                     g.write(text)
                     g.flush()
-                with open(filepath + 'bld', 'w') as g:
-                    g.write(self.pyxbld)
+                with open(bldpath, 'w') as g:
+                    g.write(bldtext)
                     g.flush()
                 print >> sys.stderr, "Compiling:", functionname
             importlib.import_module(fqmodulename)
@@ -346,6 +345,11 @@ def %(name)s(%(cparams)s):
 
     def __repr__(self):
         return "%s(<function %s>)" % (type(self).__name__, self.name)
+
+def readornone(path):
+    if os.path.exists(path):
+        with open(path) as f:
+            return f.read()
 
 class Complete(object):
 
