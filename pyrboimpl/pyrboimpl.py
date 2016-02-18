@@ -222,6 +222,12 @@ class Variant:
 
 class Decorated(object):
 
+    pyxbld = '''from distutils.extension import Extension
+import numpy as np
+
+def make_ext(name, source):
+    return Extension(name, [source], include_dirs = [np.get_include()])
+'''
     template = '''cimport numpy as np
 import cython
 
@@ -332,12 +338,7 @@ def %(name)s(%(cparams)s):
                     g.write(text)
                     g.flush()
                 with open(filepath + 'bld', 'w') as g:
-                    g.write('''from distutils.extension import Extension
-import numpy as np
-
-def make_ext(name, source):
-    return Extension(name, [source], include_dirs = [np.get_include()])
-''')
+                    g.write(self.pyxbld)
                     g.flush()
                 print >> sys.stderr, "Compiling:", functionname
             importlib.import_module(fqmodulename)
