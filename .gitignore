@@ -1,2 +1,3 @@
-*_turbo/
+#gclean
 *.pyc
+*_turbo/
