@@ -38,6 +38,17 @@ class My:
         z = self_x + y
         return z
 
+class My2:
+
+    def __init__(self, x):
+        self.x = x
+
+    @turbo(self = dict(x = np.int8), y = np.int8, z = np.int8)
+    def plus(self, y):
+        self_x = LOCAL
+        z = self_x - y
+        return z
+
 @turbo(obj = dict(field = int))
 def fieldlocal(obj):
     obj_field = 6
@@ -50,6 +61,10 @@ class TestOO(unittest.TestCase):
         my = My(5)
         self.assertEqual(11, my.plus(6))
         self.assertEqual(11, my.plus2(6))
+
+    def test_works2(self):
+        my = My2(5)
+        self.assertEqual(-1, my.plus(6))
 
     def test_fieldlocal(self):
         class Obj: pass
