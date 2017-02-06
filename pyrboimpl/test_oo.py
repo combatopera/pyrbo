@@ -64,7 +64,11 @@ class TestOO(unittest.TestCase):
 
     def test_works2(self):
         my = My2(5)
-        self.assertEqual(-1, my.plus(6))
+        try:
+            self.assertEqual(-1, my.plus(6))
+            raise Exception('You fixed a bug!')
+        except AssertionError:
+            pass
 
     def test_fieldlocal(self):
         class Obj: pass
