@@ -1,5 +1,5 @@
 author = 'Andrzej Cichocki'
 name = 'pyrbo'
-years = range(2015, 2017)
+years = range(2015, 2018)
 projects = ()
 deps = 'numpy', 'cython'

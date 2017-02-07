@@ -1,4 +1,4 @@
-# Copyright 2015, 2016 Andrzej Cichocki
+# Copyright 2015, 2016, 2017 Andrzej Cichocki
 
 # This file is part of pyrbo.
 #
