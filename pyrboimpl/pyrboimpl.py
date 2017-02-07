@@ -240,6 +240,7 @@ def %(name)s(%(cparams)s):
 '''
     eol = re.search(r'[\r\n]+', template).group()
     indentpattern = re.compile(r'^\s*')
+    colonpattern = re.compile(r':\s*$')
 
     @classmethod
     def getbody(cls, pyfunc):
@@ -248,10 +249,11 @@ def %(name)s(%(cparams)s):
         i = 0
         functionindentlen = len(getindent())
         while True:
-            bodyindent = getindent()
-            if len(bodyindent) != functionindentlen:
+            i += 1 # No point checking (first line of) decorator.
+            if cls.colonpattern.search(lines[i]) is not None:
                 break
-            i += 1
+        i += 1
+        bodyindent = getindent()
         if re.search(r'=\s*LOCAL\s*$', lines[i]) is not None:
             i += 1
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
