@@ -3,4 +3,4 @@ name = 'pyrbo'
 years = range(2015, 2018)
 projects = ()
 deps = 'numpy', 'cython'
-pyversion = 2
+pyversions = 2,
