@@ -1,2 +1,4 @@
+language: python
+python: ['3.4']
 install: git clone https://github.com/combatopera/pyven.git ../pyven
-script: ../pyven/drone.io.py
+script: python ../pyven/drone.io.py
