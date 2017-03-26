@@ -1,5 +1,3 @@
-#!/usr/bin/env pyven
-
 # Copyright 2015, 2016, 2017 Andrzej Cichocki
 
 # This file is part of pyrbo.
@@ -46,6 +44,3 @@ class TestTurbo(unittest.TestCase):
         for task in tsum,:
             task(n, x, y, actual)
             self.assertTrue(np.array_equal(x + y, actual))
-
-if '__main__' == __name__:
-    unittest.main()

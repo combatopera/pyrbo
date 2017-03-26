@@ -1,5 +1,3 @@
-#!/usr/bin/env pyven
-
 # Copyright 2015, 2016, 2017 Andrzej Cichocki
 
 # This file is part of pyrbo.
@@ -91,6 +89,3 @@ class TestSpeed(unittest.TestCase):
                 maxreltime = self.ntomaxreltime.get(n, 1)
                 reltime = meanof(times) / meanof(nandtasktotimes[n, npsum])
                 self.assertTrue(reltime <= maxreltime, "(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
-
-if '__main__' == __name__:
-    unittest.main()

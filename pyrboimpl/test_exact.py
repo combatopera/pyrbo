@@ -1,5 +1,3 @@
-#!/usr/bin/env pyven
-
 # Copyright 2015, 2016, 2017 Andrzej Cichocki
 
 # This file is part of pyrbo.
@@ -49,6 +47,3 @@ class TestExact(unittest.TestCase):
                 g2 = f2[T, t]
                 x = u(10)
                 g2(x) # All conversions allowed, including narrowing.
-
-if '__main__' == __name__:
-    unittest.main()

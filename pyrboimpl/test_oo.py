@@ -1,5 +1,3 @@
-#!/usr/bin/env pyven
-
 # Copyright 2015, 2016, 2017 Andrzej Cichocki
 
 # This file is part of pyrbo.
@@ -115,6 +113,3 @@ class TestBuf(unittest.TestCase):
             self.fail('Expected already bound.')
         except AlreadyBoundException, e:
             self.assertEqual((T, t, TestBuf), e.args)
-
-if '__main__' == __name__:
-    unittest.main()

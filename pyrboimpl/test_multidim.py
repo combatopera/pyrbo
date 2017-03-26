@@ -1,5 +1,3 @@
-#!/usr/bin/env pyven
-
 # Copyright 2015, 2016, 2017 Andrzej Cichocki
 
 # This file is part of pyrbo.
@@ -33,6 +31,3 @@ class TestMultiDim(unittest.TestCase):
         a[1, 0] = 3
         a[1, 1] = 4
         self.assertEqual((1, 2, 3, 4), multidim(a))
-
-if '__main__' == __name__:
-    unittest.main()

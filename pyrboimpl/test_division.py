@@ -1,5 +1,3 @@
-#!/usr/bin/env pyven
-
 # Copyright 2015, 2016, 2017 Andrzej Cichocki
 
 # This file is part of pyrbo.
@@ -58,6 +56,3 @@ class TestDivision(unittest.TestCase):
         # turbo function does round-to-zero:
         self.assertEqual(1, turbofloor[T, np.int32](3, 2))
         self.assertEqual(-1, turbofloor[T, np.int32](-3, 2))
-
-if '__main__' == __name__:
-    unittest.main()
