@@ -1,6 +1,8 @@
-author = 'Andrzej Cichocki'
-name = 'pyrbo'
-years = range(2015, 2018)
-projects = ()
-deps = 'numpy', 'cython'
-pyversions = 2,
+author = Andrzej Cichocki
+name = pyrbo
+years#2015 = 2015
+years#2016 = 2016
+years#2017 = 2017
+deps#numpy = numpy
+deps#cython = cython
+pyversions#2 = 2
