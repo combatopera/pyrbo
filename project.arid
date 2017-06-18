@@ -1,10 +1,10 @@
 author = Andrzej Cichocki
 name = pyrbo
 years
-    2015 = 2015
-    2016 = 2016
-    2017 = 2017
+    += 2015
+    += 2016
+    += 2017
 deps
-    numpy = numpy
-    cython = cython
-pyversions 2 = 2
+    += numpy
+    += cython
+pyversions += 2
