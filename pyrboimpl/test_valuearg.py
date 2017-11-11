@@ -16,8 +16,8 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np, unittest
-from leaf import turbo, T, X, Y
-from common import BadArgException
+from .leaf import turbo, T, X, Y
+from .common import BadArgException
 
 y = None
 
@@ -38,5 +38,5 @@ class TestValueArg(unittest.TestCase):
         try:
             arrayof[X, 100]
             self.fail("Expected bad arg.")
-        except BadArgException, e:
+        except BadArgException as e:
             self.assertEqual((100,), e.args)

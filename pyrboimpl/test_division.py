@@ -17,7 +17,7 @@
 
 from __future__ import division # Required by tests script.
 import numpy as np, unittest
-from leaf import turbo, T
+from .leaf import turbo, T
 
 def pytrue(x, y):
     return x / y

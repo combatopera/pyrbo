@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np, unittest
-from leaf import turbo, T
+from .leaf import turbo, T
 
 @turbo(types = dict(a = [[T]]), dynamic = True)
 def multidim(a):

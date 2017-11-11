@@ -15,11 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, sys, os, logging, common, itertools
-from unroll import unroll
+import inspect, re, importlib, sys, os, logging, itertools, functools
+from .common import BadArgException, NoSuchPlaceholderException, AlreadyBoundException, NotDynamicException, NoSuchVariableException
+from .unroll import unroll
 
 log = logging.getLogger(__name__)
 
+@functools.total_ordering
 class Placeholder(object):
 
     isplaceholder = True
@@ -27,8 +29,11 @@ class Placeholder(object):
     def __init__(self, name):
         self.name = name
 
-    def __cmp__(self, that):
-        return cmp(self.name, that.name)
+    def __lt__(self, that):
+        return self.name < that.name
+
+    def __eq__(self, that):
+        return self.name == that.name
 
     def __hash__(self):
         return hash(self.name)
@@ -39,6 +44,7 @@ class Placeholder(object):
     def resolvedarg(self, variant):
         return variant.paramtoarg[self]
 
+@functools.total_ordering
 class Type:
 
     isplaceholder = False
@@ -55,8 +61,11 @@ class Type:
     def discriminator(self):
         return self.typename()
 
-    def __cmp__(self, that):
-        return cmp(self.t, that.t)
+    def __lt__(self, that):
+        return self.t < that.t
+
+    def __eq__(self, that):
+        return self.t == that.t
 
     def __hash__(self):
         return hash(self.t)
@@ -73,7 +82,7 @@ class Obj:
         self.o = o
 
     def typename(self):
-        raise common.BadArgException(self.o)
+        raise BadArgException(self.o)
 
     def discriminator(self):
         return str(self.o)
@@ -155,7 +164,7 @@ class Scalar:
 class Composite:
 
     def __init__(self, fields):
-        self.fields = sorted(fields.iteritems())
+        self.fields = sorted(fields.items())
 
     def cparam(self, variant, name):
         return CDef(name, name)
@@ -200,21 +209,21 @@ class Variant:
     def __init__(self, decorated, paramtoarg):
         self.unbound = set(p for p in decorated.placeholders if p not in paramtoarg)
         if not self.unbound:
-            self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.iteritems()))
+            self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.items()))
         self.paramtoarg = paramtoarg
 
     def spinoff(self, decorated, param, arg):
         if param not in decorated.placeholders:
-            raise common.NoSuchPlaceholderException(param)
+            raise NoSuchPlaceholderException(param)
         if param in self.paramtoarg:
-            raise common.AlreadyBoundException(param, self.paramtoarg[param].unwrap(), arg.unwrap())
+            raise AlreadyBoundException(param, self.paramtoarg[param].unwrap(), arg.unwrap())
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
         return Variant(decorated, paramtoarg)
 
     def complete(self, decorated, args):
         if not decorated.dynamic:
-            raise common.NotDynamicException(decorated.name)
+            raise NotDynamicException(decorated.name)
         paramtoarg = self.paramtoarg.copy()
         for param in self.unbound:
             paramtoarg[param] = decorated.placeholdertoresolver[param](args)
@@ -259,23 +268,23 @@ def %(name)s(%(cparams)s):
         return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
 
     def __init__(self, nametotypespec, dynamic, pyfunc):
-        co_varnames = pyfunc.func_code.co_varnames # The params followed by the locals.
-        co_argcount = pyfunc.func_code.co_argcount
+        co_varnames = pyfunc.__code__.co_varnames # The params followed by the locals.
+        co_argcount = pyfunc.__code__.co_argcount
         self.paramnames = co_varnames[:co_argcount]
         self.localnames = [n for n in co_varnames[co_argcount:] if 'UNROLL' != n]
         self.constnames = []
         allnames = set(itertools.chain(self.paramnames, self.localnames))
-        for name, typespec in nametotypespec.iteritems():
+        for name, typespec in nametotypespec.items():
             if name not in allnames:
                 if not typespec.ispotentialconst():
-                    raise common.NoSuchVariableException(name)
+                    raise NoSuchVariableException(name)
                 self.constnames.append(name) # We'll make a DEF for it.
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
         self.bodyindent, self.body = self.getbody(pyfunc)
         # Note placeholders includes those in consts, placeholdertoresolver does not:
         self.placeholders = set()
-        for typespec in nametotypespec.itervalues():
+        for typespec in nametotypespec.values():
             for param, _ in typespec.iterplaceholders():
                 self.placeholders.add(param)
         self.placeholdertoresolver = {}
@@ -312,7 +321,7 @@ def %(name)s(%(cparams)s):
                     cdefs.extend(typespec.itercdefs(variant, name, False))
             defs = []
             consts = dict([name, self.nametotypespec[name].resolvedobj(variant)] for name in self.constnames)
-            for item in consts.iteritems():
+            for item in consts.items():
                 defs.append(self.deftemplate % item)
             body = []
             unroll(self.body, body, consts, self.eol)
@@ -341,7 +350,7 @@ def %(name)s(%(cparams)s):
                 with open(bldpath, 'w') as g:
                     g.write(bldtext)
                     g.flush()
-                print >> sys.stderr, "Compiling:", functionname
+                print("Compiling:", functionname, file=sys.stderr)
             importlib.import_module(fqmodulename)
         return Complete(getattr(sys.modules[fqmodulename], functionname))
 
@@ -391,7 +400,8 @@ class Partial(object):
     def todynamic(self):
         return Partial(self.decorated, self.variant, True)
 
-    def __getitem__(self, (param, arg)):
+    def __getitem__(self, xxx_todo_changeme):
+        (param, arg) = xxx_todo_changeme
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
 
@@ -414,7 +424,8 @@ class InstancePartial:
     def __call__(self, *args, **kwargs):
         return self.decorated.getcomplete(self.variant.complete(self.decorated, (self.instance,) + args))(self.instance, *args, **kwargs)
 
-    def __getitem__(self, (param, arg)):
+    def __getitem__(self, xxx_todo_changeme1):
+        (param, arg) = xxx_todo_changeme1
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         variant = self.variant.spinoff(self.decorated, param, arg)
         if variant.unbound:
@@ -428,7 +439,7 @@ class Decorator:
         def wrap(spec):
             return spec if isinstance(spec, Placeholder) else Type(spec)
         def iternametotypespec(nametotypespec):
-            for name, typespec in nametotypespec.iteritems():
+            for name, typespec in nametotypespec.items():
                 if list == type(typespec):
                     elementtypespec, = typespec
                     ndim = 1

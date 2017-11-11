@@ -17,12 +17,12 @@
 
 from __future__ import division
 import unittest, numpy as np, logging, time
-from leaf import turbo, T
+from .leaf import turbo, T
 
 log = logging.getLogger(__name__)
 
 def pysum(n, x, y, out):
-    for i in xrange(n):
+    for i in range(n):
         out[i] = x[i] + y[i]
 
 def npsum(n, x, y, out):
@@ -31,19 +31,19 @@ def npsum(n, x, y, out):
 
 @turbo(i = np.uint32, n = np.uint32, x = [np.float32], y = [np.float32], out = [np.float32])
 def tsum(n, x, y, out):
-    for i in xrange(n):
+    for i in range(n):
         out[i] = x[i] + y[i]
 
 @turbo(types = dict(i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T]), dynamic = True)
 def gsum(n, x, y, out):
-    for i in xrange(n):
+    for i in range(n):
         out[i] = x[i] + y[i]
 
 class Cls:
 
     @turbo(types = dict(self = {}, i = np.uint32, n = np.uint32, x = [T], y = [T], out = [T]), dynamic = True)
     def oogsum(self, n, x, y, out):
-        for i in xrange(n):
+        for i in range(n):
             out[i] = x[i] + y[i]
 
 class TestTurbo(unittest.TestCase):
@@ -68,7 +68,7 @@ class TestSpeed(unittest.TestCase):
         outliers = 2
         meanof = lambda v: sum(v) / len(v)
         nandtasktotimes = {}
-        for n in xrange(2, 6):
+        for n in range(2, 6):
             n = 10 ** n
             log.info("n: %s", n)
             x = np.arange(n, dtype = np.float32)
@@ -77,14 +77,14 @@ class TestSpeed(unittest.TestCase):
                 log.info("task: %s", task)
                 out = np.empty(n, dtype = np.float32)
                 times = []
-                for _ in xrange(trials):
+                for _ in range(trials):
                     t = time.time()
                     task(n, x, y, out)
                     times.append((time.time() - t) * 1000)
                 times.sort()
                 log.info("trials: %s", ' '.join("%.6f" % q for q in times))
                 nandtasktotimes[n, task] = times[outliers:-outliers]
-        for (n, task), times in nandtasktotimes.iteritems():
+        for (n, task), times in nandtasktotimes.items():
             if npsum != task:
                 maxreltime = self.ntomaxreltime.get(n, 1)
                 reltime = meanof(times) / meanof(nandtasktotimes[n, npsum])

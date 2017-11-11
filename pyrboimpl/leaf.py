@@ -16,25 +16,26 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyximport, pyrboimpl
+from .pyrboimpl import Placeholder, Partial, Type, Obj, Decorator
 
 pyximport.install(inplace = True, build_in_temp = False) # Note -O3 is apparently the default.
 
-globals().update([p.name, p] for p in (pyrboimpl.Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1)))
+globals().update([p.name, p] for p in (Placeholder(chr(i)) for i in range(ord('T'), ord('Z') + 1)))
 
 def turbo(**kwargs):
     if 'types' not in kwargs:
         kwargs = dict(types = kwargs)
     nametotypespec = kwargs['types']
     dynamic = kwargs.get('dynamic', False)
-    return pyrboimpl.Decorator(nametotypespec, dynamic)
+    return Decorator(nametotypespec, dynamic)
 
 class ClassVariant:
 
     @classmethod
     def create(cvcls, cls):
         placeholders = set()
-        for member in cls.__dict__.itervalues():
-            if isinstance(member, pyrboimpl.Partial):
+        for member in cls.__dict__.values():
+            if isinstance(member, Partial):
                 placeholders.update(member.decorated.placeholders)
         return cvcls(cls.__name__, placeholders, {})
 
@@ -54,12 +55,13 @@ class ClassVariant:
 
 class basegeneric(type):
 
-    def __getitem__(cls, (param, arg)):
-        arg = pyrboimpl.Type(arg) if isinstance(arg, type) else pyrboimpl.Obj(arg)
+    def __getitem__(cls, xxx_todo_changeme):
+        (param, arg) = xxx_todo_changeme
+        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         variant = cls.turbo_variant.spinoff(param, arg)
         members = {}
-        for name, member in cls.__dict__.iteritems():
-            if isinstance(member, pyrboimpl.Partial) and param in member.variant.unbound:
+        for name, member in cls.__dict__.items():
+            if isinstance(member, Partial) and param in member.variant.unbound:
                 member = member[param, arg.unwrap()]
             members[name] = member
         members['turbo_variant'] = variant

@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from cStringIO import StringIO
+from io import StringIO
 
 pattern = re.compile(r'^(\s*)for\s+UNROLL\s+in\s+xrange\s*\(\s*([^\s]+)\s*\)\s*:\s*$')
 indentregex = re.compile(r'^\s*')
@@ -44,19 +44,19 @@ def unroll(body, g, consts, eol):
             line = f.readline()
         buffer.append(line)
         if variable in consts:
-            for _ in xrange(consts[variable]):
+            for _ in range(consts[variable]):
                 for line in body:
                     g.append(outerindent + line[len(innerindent):])
         else:
             mask = 0x01
             while mask < maxchunk:
                 g.append("%sif %s & 0x%x:%s" % (outerindent, variable, mask, eol))
-                for _ in xrange(mask):
+                for _ in range(mask):
                     for line in body:
                         g.append(line)
                 mask <<= 1
             g.append("%swhile %s >= 0x%x:%s" % (outerindent, variable, maxchunk, eol))
-            for _ in xrange(maxchunk):
+            for _ in range(maxchunk):
                 for line in body:
                     g.append(line)
             g.append("%s%s -= 0x%x%s" % (innerindent, variable, maxchunk, eol))

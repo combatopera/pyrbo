@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from leaf import turbo
+from .leaf import turbo
 
 @turbo(
     i = np.uint32,
@@ -31,7 +31,7 @@ def tsum(
     y,
     out,
 ):
-    for i in xrange(n):
+    for i in range(n):
         out[i] = x[i] + y[i]
 
 class TestTurbo(unittest.TestCase):

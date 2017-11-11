@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np, unittest
-from leaf import turbo, T, U, X
+from .leaf import turbo, T, U, X
 
 @turbo(types = dict(x = [T], y = [U], n = np.uint32), dynamic = True)
 def addxtoy(x, y, n):
@@ -38,7 +38,7 @@ class TestInfer(unittest.TestCase):
         x = np.arange(10, dtype = np.int32) + 1
         y = np.arange(10, dtype = np.float32)
         addxtoy(x, y, 5)
-        self.assertEqual(range(1, 11), list(x))
+        self.assertEqual(list(range(1, 11)), list(x))
         self.assertEqual([1, 3, 5, 7, 9, 5, 6, 7, 8, 9], list(y))
 
     def test_works2(self):
@@ -50,5 +50,5 @@ class TestInfer(unittest.TestCase):
         try:
             noinfer(x, y)
             self.fail("Expected value error.")
-        except ValueError, e:
+        except ValueError as e:
             self.assertEqual(("Buffer dtype mismatch, expected 'int32_t' but got 'float'",), e.args)

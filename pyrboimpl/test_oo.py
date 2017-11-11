@@ -16,8 +16,8 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from leaf import turbo, X, T, U, Z, generic, LOCAL
-from common import NoSuchPlaceholderException, AlreadyBoundException
+from .leaf import turbo, X, T, U, Z, generic, LOCAL
+from .common import NoSuchPlaceholderException, AlreadyBoundException
 
 class My:
 
@@ -75,9 +75,7 @@ class TestOO(unittest.TestCase):
         fieldlocal(obj)
         self.assertEqual(5, obj.field)
 
-class Buf:
-
-    __metaclass__ = generic
+class Buf(metaclass=generic):
 
     def __init__(self, u):
         self.u = u
@@ -106,10 +104,10 @@ class TestBuf(unittest.TestCase):
         try:
             Buf[Z, None]
             self.fail('Expected no such placeholder.')
-        except NoSuchPlaceholderException, e:
+        except NoSuchPlaceholderException as e:
             self.assertEqual((Z,), e.args)
         try:
             tbuf[T, TestBuf]
             self.fail('Expected already bound.')
-        except AlreadyBoundException, e:
+        except AlreadyBoundException as e:
             self.assertEqual((T, t, TestBuf), e.args)

@@ -7,4 +7,4 @@ years
 deps
     += numpy
     += cython
-pyversions += 2
+pyversions += 3

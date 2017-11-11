@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest, numpy as np
-from leaf import turbo, T
+from .leaf import turbo, T
 
 @turbo(v = [T])
 def f(v):
