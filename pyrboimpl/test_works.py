@@ -84,8 +84,11 @@ class TestSpeed(unittest.TestCase):
                 times.sort()
                 log.info("trials: %s", ' '.join("%.6f" % q for q in times))
                 nandtasktotimes[n, task] = times[outliers:-outliers]
+        fails = []
         for (n, task), times in nandtasktotimes.items():
             if npsum != task:
                 maxreltime = self.ntomaxreltime.get(n, 1)
                 reltime = meanof(times) / meanof(nandtasktotimes[n, npsum])
-                self.assertTrue(reltime <= maxreltime, "(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
+                if reltime > maxreltime:
+                    fails.append("(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
+        self.assertEqual([], fails)
