@@ -15,10 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import pyximport, pyrboimpl
+import initnative, pyrboimpl
 from .pyrboimpl import Placeholder, Partial, Type, Obj, Decorator
-
-pyximport.install(inplace = True, build_in_temp = False) # Note -O3 is apparently the default.
+del initnative
 
 globals().update([p.name, p] for p in (Placeholder(chr(i)) for i in range(ord('T'), ord('Z') + 1)))
 
