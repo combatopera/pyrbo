@@ -15,9 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import pyximport, pyrboimpl
-
-pyximport.install(inplace = True, build_in_temp = False) # Note -O3 is apparently the default.
+import initnative, pyrboimpl
 
 globals().update([p.name, p] for p in (pyrboimpl.Placeholder(chr(i)) for i in xrange(ord('T'), ord('Z') + 1)))
 
