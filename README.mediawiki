@@ -1,0 +1,7 @@
+{|
+! master
+! py3
+|-
+| [[Image:https://travis-ci.org/combatopera/pyrbo.svg?branch=master]]
+| [[Image:https://travis-ci.org/combatopera/pyrbo.svg?branch=py3]]
+|}
