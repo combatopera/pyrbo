@@ -249,7 +249,7 @@ def %(name)s(%(cparams)s):
 %(code)s'''
     deftemplate = '''DEF %s = %r
 '''
-    eol = re.search(r'[\r\n]+', template).group()
+    eol = re.search(r'[\r\n]+', pyxbld).group()
     indentpattern = re.compile(r'^\s*')
     colonpattern = re.compile(r':\s*$')
 
