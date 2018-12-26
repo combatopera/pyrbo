@@ -92,3 +92,15 @@ class TestSpeed(unittest.TestCase):
                 if reltime > maxreltime:
                     fails.append("(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
         self.assertEqual([], fails)
+
+@turbo(n = np.uint32, acc = np.uint32)
+def triple(n):
+    acc = 0
+    for UNROLL in range(n):
+        acc += 3
+    return acc
+
+class TestUnroll(unittest.TestCase):
+
+    def test_unroll(self):
+        self.assertEqual(21, triple(7))
