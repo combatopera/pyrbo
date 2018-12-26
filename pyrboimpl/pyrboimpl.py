@@ -237,7 +237,9 @@ import numpy as np
 def make_ext(name, source):
     return Extension(name, [source], include_dirs = [np.get_include()])
 '''
-    template = '''cimport numpy as np
+    template = '''# cython: language_level=3
+
+cimport numpy as np
 import cython
 
 %(defs)s
