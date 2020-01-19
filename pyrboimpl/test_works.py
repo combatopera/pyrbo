@@ -16,8 +16,8 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division
-import unittest, numpy as np, logging, time
 from .leaf import turbo, T
+import unittest, numpy as np, logging, time, os
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class TestTurbo(unittest.TestCase):
 
 class TestSpeed(unittest.TestCase):
 
-    ntomaxreltime = {100: 1.2, 1000: 1.2} # I guess in small array case we see some setup overhead.
+    ntomaxreltime = {10000: 1.5, 100000: 1.5} if 'true' == os.environ.get('TRAVIS') else {}
 
     def test_fastenough(self):
         trials = 20
@@ -89,7 +89,6 @@ class TestSpeed(unittest.TestCase):
             if npsum != task:
                 maxreltime = self.ntomaxreltime.get(n, 1)
                 reltime = meanof(times) / meanof(nandtasktotimes[n, npsum])
-                print(reltime, maxreltime)
                 if reltime > maxreltime:
                     fails.append("(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
         self.assertEqual([], fails)
