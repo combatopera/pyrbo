@@ -89,6 +89,7 @@ class TestSpeed(unittest.TestCase):
             if npsum != task:
                 maxreltime = self.ntomaxreltime.get(n, 1)
                 reltime = meanof(times) / meanof(nandtasktotimes[n, npsum])
+                print(reltime, maxreltime)
                 if reltime > maxreltime:
                     fails.append("(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
         self.assertEqual([], fails)
