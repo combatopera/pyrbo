@@ -21,8 +21,8 @@ years +=
     2015
     2016
     2017
-deps +=
+requires +=
+    Cython
+    nativecommon
     numpy
-    cython
-projects += nativecommon
 pyversions += 3
