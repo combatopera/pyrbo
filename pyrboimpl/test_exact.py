@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, numpy as np
 from .leaf import turbo, T
+from unittest import TestCase
+import numpy as np
 
 @turbo(v = [T])
 def f(v):
@@ -26,7 +27,7 @@ def f(v):
 def f2(x):
     pass
 
-class TestExact(unittest.TestCase):
+class TestExact(TestCase):
 
     def test_exact(self):
         dtypes = (np.int8, np.int16, np.int32, np.int64,

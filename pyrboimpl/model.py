@@ -15,14 +15,14 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect, re, importlib, sys, os, logging, itertools, functools
-from .common import BadArgException, NoSuchPlaceholderException, AlreadyBoundException, NotDynamicException, NoSuchVariableException
+from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
 from .unroll import unroll
+import functools, importlib, inspect, itertools, logging, os, re, sys
 
 log = logging.getLogger(__name__)
 
 @functools.total_ordering
-class Placeholder(object):
+class Placeholder:
 
     isplaceholder = True
 
@@ -229,7 +229,7 @@ class Variant:
             paramtoarg[param] = decorated.placeholdertoresolver[param](args)
         return Variant(decorated, paramtoarg)
 
-class Decorated(object):
+class Decorated:
 
     pyxbld = '''from distutils.extension import Extension
 import numpy as np
@@ -364,7 +364,7 @@ def readornone(path):
         with open(path) as f:
             return f.read()
 
-class Complete(object):
+class Complete:
 
     def __init__(self, f):
         self.f = f
@@ -393,7 +393,7 @@ def partialorcomplete(decorated, variant):
     else:
         return decorated.getcomplete(variant)
 
-class Partial(object):
+class Partial:
 
     def __init__(self, decorated, variant):
         self.decorated = decorated

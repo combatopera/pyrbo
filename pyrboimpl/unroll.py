@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
 from io import StringIO
+import re
 
 pattern = re.compile(r'^(\s*)for\s+UNROLL\s+in\s+range\s*\(\s*([^\s]+)\s*\)\s*:\s*$')
 indentregex = re.compile(r'^\s*')

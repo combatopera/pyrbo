@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division # Required by tests script.
-import numpy as np, unittest
 from .leaf import turbo, T
+from unittest import TestCase
+import numpy as np
 
 def pytrue(x, y):
     return x / y
@@ -33,7 +33,7 @@ def turbotrue(x, y):
 def turbofloor(x, y):
     return x // y
 
-class TestDivision(unittest.TestCase):
+class TestDivision(TestCase):
 
     def test_floats(self):
         for truediv in pytrue, turbotrue[T, np.float32]:

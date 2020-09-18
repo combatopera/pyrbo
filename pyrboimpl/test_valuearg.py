@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np, unittest
-from .leaf import turbo, T, X, Y
 from .common import BadArgException
+from .leaf import turbo, T, X, Y
+from unittest import TestCase
+import numpy as np
 
 y = None
 
@@ -29,7 +30,7 @@ def turbotuple(x):
 def arrayof(v):
     pass
 
-class TestValueArg(unittest.TestCase):
+class TestValueArg(TestCase):
 
     def test_works(self):
         self.assertEqual((-5, 6), turbotuple[T, np.int32][Y, 6](-5))

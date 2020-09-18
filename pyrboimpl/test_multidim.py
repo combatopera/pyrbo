@@ -15,14 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np, unittest
 from .leaf import turbo, T
+from unittest import TestCase
+import numpy as np
 
 @turbo(types = dict(a = [[T]]), dynamic = True)
 def multidim(a):
     return a[0], a[1], a[2], a[3]
 
-class TestMultiDim(unittest.TestCase):
+class TestMultiDim(TestCase):
 
     def test_works(self):
         a = np.empty((2, 2), dtype = np.float32)

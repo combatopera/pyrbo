@@ -18,24 +18,24 @@
 class BadArgException(Exception):
 
     def __init__(self, obj):
-        Exception.__init__(self, obj)
+        super().__init__(obj)
 
 class NoSuchVariableException(Exception):
 
     def __init__(self, name):
-        Exception.__init__(self, name)
+        super().__init__(name)
 
 class NoSuchPlaceholderException(Exception):
 
     def __init__(self, param):
-        Exception.__init__(self, param)
+        super().__init__(param)
 
 class AlreadyBoundException(Exception):
 
     def __init__(self, param, current, given):
-        Exception.__init__(self, param, current, given)
+        super().__init__(param, current, given)
 
 class NotDynamicException(Exception):
 
     def __init__(self, name):
-        Exception.__init__(self, name)
+        super().__init__(name)

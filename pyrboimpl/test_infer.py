@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np, unittest
 from .leaf import turbo, T, U, X
+from unittest import TestCase
+import numpy as np
 
 @turbo(types = dict(x = [T], y = [U], n = np.uint32), dynamic = True)
 def addxtoy(x, y, n):
@@ -32,7 +33,7 @@ def add(x, y):
 def noinfer(x, y):
     pass
 
-class TestInfer(unittest.TestCase):
+class TestInfer(TestCase):
 
     def test_works(self):
         x = np.arange(10, dtype = np.int32) + 1

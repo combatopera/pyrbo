@@ -15,9 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-import unittest, numpy as np
-from .leaf import turbo, X, T, U, Z, generic, LOCAL
-from .common import NoSuchPlaceholderException, AlreadyBoundException
+from .common import AlreadyBoundException, NoSuchPlaceholderException
+from .leaf import generic, LOCAL, turbo, T, U, X, Z
+from unittest import TestCase
+import numpy as np
 
 class My:
 
@@ -53,7 +54,7 @@ def fieldlocal(obj):
     if False:
         obj.field = obj_field
 
-class TestOO(unittest.TestCase):
+class TestOO(TestCase):
 
     def test_works(self):
         my = My(5)
@@ -87,7 +88,7 @@ class Buf(metaclass=generic):
             self_u[i] = v
             i += 1
 
-class TestBuf(unittest.TestCase):
+class TestBuf(TestCase):
 
     def test_works(self):
         t = np.uint16

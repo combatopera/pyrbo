@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import division
 from .leaf import turbo, T
-import unittest, numpy as np, logging, time, os
+from unittest import TestCase
+import logging, numpy as np, os, time
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class Cls:
         for i in range(n):
             out[i] = x[i] + y[i]
 
-class TestTurbo(unittest.TestCase):
+class TestTurbo(TestCase):
 
     def test_works(self):
         n = 100000
@@ -59,7 +59,7 @@ class TestTurbo(unittest.TestCase):
             task(n, x, y, actual)
             self.assertTrue(np.array_equal(expected, actual))
 
-class TestSpeed(unittest.TestCase):
+class TestSpeed(TestCase):
 
     ntomaxreltime = {10000: 1.5, 100000: 1.5} if 'true' == os.environ.get('TRAVIS') else {}
 
@@ -100,7 +100,7 @@ def triple(n):
         acc += 3
     return acc
 
-class TestUnroll(unittest.TestCase):
+class TestUnroll(TestCase):
 
     def test_unroll(self):
         self.assertEqual(21, triple(7))
