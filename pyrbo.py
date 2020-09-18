@@ -15,14 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrboimpl.leaf import turbo, T, U, V, W, X, Y, Z, generic, LOCAL
-from pyrboimpl.common import BadArgException, NoSuchVariableException, NoSuchPlaceholderException, AlreadyBoundException
+from pyrboimpl.common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException
+from pyrboimpl.leaf import generic, LOCAL, turbo, T, U, V, W, X, Y, Z
 
-assert BadArgException
-assert NoSuchVariableException
-assert NoSuchPlaceholderException
 assert AlreadyBoundException
-
+assert BadArgException
+assert NoSuchPlaceholderException
+assert NoSuchVariableException
+assert generic
+assert not LOCAL
 assert turbo
 assert T
 assert U
@@ -31,5 +32,3 @@ assert W
 assert X
 assert Y
 assert Z
-assert generic
-assert not LOCAL
