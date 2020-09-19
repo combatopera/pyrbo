@@ -402,8 +402,8 @@ class Partial:
     def todynamic(self):
         return Partial(self.decorated, self.variant, True)
 
-    def __getitem__(self, xxx_todo_changeme):
-        (param, arg) = xxx_todo_changeme
+    def __getitem__(self, paramandarg):
+        param, arg = paramandarg
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
 
@@ -426,8 +426,8 @@ class InstancePartial:
     def __call__(self, *args, **kwargs):
         return self.decorated.getcomplete(self.variant.complete(self.decorated, (self.instance,) + args))(self.instance, *args, **kwargs)
 
-    def __getitem__(self, xxx_todo_changeme1):
-        (param, arg) = xxx_todo_changeme1
+    def __getitem__(self, paramandarg):
+        param, arg = paramandarg
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         variant = self.variant.spinoff(self.decorated, param, arg)
         if variant.unbound:
