@@ -302,10 +302,10 @@ def %(name)s(%(cparams)s):
         try:
             return self.suffixtocomplete[variant.suffix]
         except KeyError:
-            self.suffixtocomplete[variant.suffix] = f = self.loadcomplete(variant)
+            self.suffixtocomplete[variant.suffix] = f = self._loadcomplete(variant)
             return f
 
-    def loadcomplete(self, variant):
+    def _loadcomplete(self, variant):
         functionname = self.name + variant.suffix
         fqmodulename = self.fqmodule + '_turbo.' + functionname
         if fqmodulename not in sys.modules:
