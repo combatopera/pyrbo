@@ -46,7 +46,7 @@ def unroll(body, g, consts, eol):
         if variable in consts:
             for _ in range(consts[variable]):
                 for line in body:
-                    g.append(outerindent + line[len(innerindent):])
+                    g.append(f"{outerindent}{line[len(innerindent):]}")
         else:
             mask = 0x01
             while mask < maxchunk:

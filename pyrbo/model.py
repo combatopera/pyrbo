@@ -113,7 +113,7 @@ class Array:
 
     def cparam(self, variant, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        name = 'py_' + name
+        name = f"py_{name}"
         return CDef(name, "np.ndarray[np.%s_t%s] %s" % (elementtypename, self.ndimtext, name))
 
     def itercdefs(self, variant, name, isfuncparam):
@@ -125,8 +125,8 @@ class Array:
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        cname = undparent + '_' + name
-        pyname = 'py_' + cname
+        cname = f"{undparent}_{name}"
+        pyname = f"py_{cname}"
         yield CDef(pyname, "cdef np.ndarray[np.%s_t%s] %s = %s.%s" % (elementtypename, self.ndimtext, pyname, dotparent, name))
         yield CDef(cname, "cdef np.%s_t* %s = &py_%s_%s[%s]" % (elementtypename, cname, undparent, name, self.zeros))
 
@@ -153,7 +153,7 @@ class Scalar:
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         typename = self.typespec.resolvedarg(variant).typename()
-        cname = undparent + '_' + name
+        cname = f"{undparent}_{name}"
         yield CDef(cname, "cdef np.%s_t %s = %s.%s" % (typename, cname, dotparent, name))
 
     def resolvedobj(self, variant):
@@ -182,8 +182,8 @@ class Composite:
                 yield placeholder, FieldResolver(field, resolver)
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
-        undparent += '_' + name
-        dotparent += '.' + name
+        undparent = f"{undparent}_{name}"
+        dotparent = f"{dotparent}.{name}"
         for field, fieldtype in self.fields:
             for cdef in fieldtype.iternestedcdefs(variant, undparent, dotparent, field):
                 yield cdef
@@ -211,7 +211,7 @@ class Variant:
     def __init__(self, decorated, paramtoarg):
         self.unbound = set(p for p in decorated.placeholders if p not in paramtoarg)
         if not self.unbound:
-            self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.items()))
+            self.suffix = ''.join(f"_{arg.discriminator()}" for _, arg in sorted(paramtoarg.items()))
         self.paramtoarg = paramtoarg
 
     def spinoff(self, decorated, param, arg):
@@ -269,7 +269,7 @@ def %(name)s(%(cparams)s):
         bodyindent = getindent()
         if re.search(r'=\s*LOCAL\s*$', lines[i]) is not None:
             i += 1
-        return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
+        return bodyindent[functionindentlen:], ''.join(f"{line[functionindentlen:]}{cls.eol}" for line in lines[i:])
 
     def __init__(self, nametotypespec, dynamic, pyfunc):
         co_varnames = pyfunc.__code__.co_varnames # The params followed by the locals.
@@ -308,8 +308,8 @@ def %(name)s(%(cparams)s):
             return f
 
     def _loadcomplete(self, variant):
-        functionname = self.name + variant.suffix
-        fqmodulename = self.fqmodule + '_turbo.' + functionname
+        functionname = f"{self.name}{variant.suffix}"
+        fqmodulename = f"{self.fqmodule}_turbo.{functionname}"
         if fqmodulename not in sys.modules:
             cparams = []
             cdefs = []
@@ -334,12 +334,12 @@ def %(name)s(%(cparams)s):
                 defs = ''.join(defs),
                 name = functionname,
                 cparams = ', '.join(str(p) for p in cparams),
-                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
+                code = f"""{''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs)}{body}""",
             )
             bldtext = self.pyxbld
-            fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
-            filepath = os.path.join(fileparent, functionname + '.pyx')
-            bldpath = filepath + 'bld'
+            fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), f"{self.fqmodule.split('.')[-1]}_turbo")
+            filepath = os.path.join(fileparent, f"{functionname}.pyx")
+            bldpath = f"{filepath}bld"
             existingtext = readornone(filepath)
             existingbld = readornone(bldpath)
             if text != existingtext or bldtext != existingbld:
