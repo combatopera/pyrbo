@@ -17,6 +17,7 @@
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
 from .unroll import unroll
+from diapyr.util import innerclass
 from functools import total_ordering
 from importlib import import_module
 from pathlib import Path
@@ -308,24 +309,29 @@ def %(name)s(%(cparams)s):
             self.suffixtocomplete[variant.suffix] = f = self._loadcomplete(variant)
             return f
 
-    def _loadcomplete(self, variant):
-        functionname = f"{self.name}{variant.suffix}"
-        fqmodulename = f"{self.fqmodule}_turbo.{functionname}"
-        if fqmodulename not in sys.modules:
+    @innerclass
+    class CompleteInfo:
+
+        def __init__(self, variant):
+            self.functionname = f"{self.name}{variant.suffix}"
+            self.fqmodulename = f"{self.fqmodule}_turbo.{self.functionname}"
+            self.variant = variant
+
+        def updatefiles(self):
             cparams = []
             cdefs = []
             for name in self.paramnames:
                 typespec = self.nametotypespec[name]
-                cparams.append(typespec.cparam(variant, name))
-                cdefs.extend(typespec.itercdefs(variant, name, True))
+                cparams.append(typespec.cparam(self.variant, name))
+                cdefs.extend(typespec.itercdefs(self.variant, name, True))
             cdefnames = set(cdef.name for cdef in cparams)
             cdefnames.update(cdef.name for cdef in cdefs)
             for name in self.localnames:
                 if name not in cdefnames:
                     typespec = self.nametotypespec[name]
-                    cdefs.extend(typespec.itercdefs(variant, name, False))
+                    cdefs.extend(typespec.itercdefs(self.variant, name, False))
             defs = []
-            consts = dict([name, self.nametotypespec[name].resolvedobj(variant)] for name in self.constnames)
+            consts = dict([name, self.nametotypespec[name].resolvedobj(self.variant)] for name in self.constnames)
             for item in consts.items():
                 defs.append(self.deftemplate % item)
             body = []
@@ -333,13 +339,13 @@ def %(name)s(%(cparams)s):
             body = ''.join(body)
             text = self.template % dict(
                 defs = ''.join(defs),
-                name = functionname,
+                name = self.functionname,
                 cparams = ', '.join(str(p) for p in cparams),
                 code = f"""{''.join(f"{self.bodyindent}{cdef}{self.eol}" for cdef in cdefs)}{body}""",
             )
             bldtext = self.pyxbld
             fileparent = Path(sys.modules[self.fqmodule].__file__).parent / f"{self.fqmodule.split('.')[-1]}_turbo"
-            filepath = fileparent / f"{functionname}.pyx"
+            filepath = fileparent / f"{self.functionname}.pyx"
             bldpath = filepath.parent / f"{filepath.name}bld"
             existingtext = _readornone(filepath)
             existingbld = _readornone(bldpath)
@@ -348,8 +354,13 @@ def %(name)s(%(cparams)s):
                 (fileparent / '__init__.py').write_text('')
                 filepath.write_text(text)
                 bldpath.write_text(bldtext)
-                print("Compiling:", functionname, file=sys.stderr)
-        return Complete(getattr(import_module(fqmodulename), functionname))
+                return True
+
+    def _loadcomplete(self, variant):
+        info = self.CompleteInfo(variant)
+        if info.fqmodulename not in sys.modules and info.updatefiles():
+            print("Compiling:", info.functionname, file=sys.stderr)
+        return Complete(getattr(import_module(info.fqmodulename), info.functionname))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
@@ -395,6 +406,10 @@ class Partial:
 
     def todynamic(self):
         return Partial(self.decorated, self.variant, True)
+
+    def updatefiles(self, param, arg):
+        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
+        self.decorated.CompleteInfo(self.variant.spinoff(self.decorated, param, arg)).updatefiles()
 
     def __getitem__(self, paramandarg):
         param, arg = paramandarg
