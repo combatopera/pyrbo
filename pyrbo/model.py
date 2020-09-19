@@ -17,7 +17,8 @@
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
 from .unroll import unroll
-import functools, importlib, inspect, itertools, logging, os, re, sys
+from importlib import import_module
+import functools, inspect, itertools, logging, os, re, sys
 
 log = logging.getLogger(__name__)
 
@@ -353,7 +354,7 @@ def %(name)s(%(cparams)s):
                     g.write(bldtext)
                     g.flush()
                 print("Compiling:", functionname, file=sys.stderr)
-            importlib.import_module(fqmodulename)
+            import_module(fqmodulename)
         return Complete(getattr(sys.modules[fqmodulename], functionname))
 
     def __repr__(self):
