@@ -17,12 +17,13 @@
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
 from .unroll import unroll
+from functools import total_ordering
 from importlib import import_module
-import functools, inspect, itertools, logging, os, re, sys
+import inspect, itertools, logging, os, re, sys
 
 log = logging.getLogger(__name__)
 
-@functools.total_ordering
+@total_ordering
 class Placeholder:
 
     isplaceholder = True
@@ -45,7 +46,7 @@ class Placeholder:
     def resolvedarg(self, variant):
         return variant.paramtoarg[self]
 
-@functools.total_ordering
+@total_ordering
 class Type:
 
     isplaceholder = False
