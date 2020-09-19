@@ -73,7 +73,7 @@ class Type:
         return hash(self.t)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.t)
+        return f"{self.__class__.__name__}({self.t!r})"
 
     def unwrap(self):
         return self.t
@@ -90,7 +90,7 @@ class Obj:
         return str(self.o)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.o)
+        return f"{self.__class__.__name__}({self.o!r})"
 
 class CDef:
 
@@ -104,7 +104,7 @@ class CDef:
 class Array:
 
     def __init__(self, elementtypespec, ndim):
-        self.ndimtext = ", ndim=%s" % ndim if 1 != ndim else ''
+        self.ndimtext = f", ndim={ndim}" if 1 != ndim else ''
         self.zeros = ', '.join(['0'] * ndim)
         self.elementtypespec = elementtypespec
 
@@ -114,21 +114,21 @@ class Array:
     def cparam(self, variant, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         name = f"py_{name}"
-        return CDef(name, "np.ndarray[np.%s_t%s] %s" % (elementtypename, self.ndimtext, name))
+        return CDef(name, f"np.ndarray[np.{elementtypename}_t{self.ndimtext}] {name}")
 
     def itercdefs(self, variant, name, isfuncparam):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         if isfuncparam:
-            yield CDef(name, "cdef np.%s_t* %s = &py_%s[%s]" % (elementtypename, name, name, self.zeros))
+            yield CDef(name, f"cdef np.{elementtypename}_t* {name} = &py_{name}[{self.zeros}]")
         else:
-            yield CDef(name, "cdef np.%s_t* %s" % (elementtypename, name))
+            yield CDef(name, f"cdef np.{elementtypename}_t* {name}")
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         cname = f"{undparent}_{name}"
         pyname = f"py_{cname}"
-        yield CDef(pyname, "cdef np.ndarray[np.%s_t%s] %s = %s.%s" % (elementtypename, self.ndimtext, pyname, dotparent, name))
-        yield CDef(cname, "cdef np.%s_t* %s = &py_%s_%s[%s]" % (elementtypename, cname, undparent, name, self.zeros))
+        yield CDef(pyname, f"cdef np.ndarray[np.{elementtypename}_t{self.ndimtext}] {pyname} = {dotparent}.{name}")
+        yield CDef(cname, f"cdef np.{elementtypename}_t* {cname} = &py_{undparent}_{name}[{self.zeros}]")
 
     def iterplaceholders(self):
         if self.elementtypespec.isplaceholder:
@@ -144,17 +144,17 @@ class Scalar:
 
     def cparam(self, variant, name):
         typename = self.typespec.resolvedarg(variant).typename()
-        return CDef(name, "np.%s_t %s" % (typename, name))
+        return CDef(name, f"np.{typename}_t {name}")
 
     def itercdefs(self, variant, name, isfuncparam):
         if not isfuncparam:
             typename = self.typespec.resolvedarg(variant).typename()
-            yield CDef(name, "cdef np.%s_t %s" % (typename, name))
+            yield CDef(name, f"cdef np.{typename}_t {name}")
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         typename = self.typespec.resolvedarg(variant).typename()
         cname = f"{undparent}_{name}"
-        yield CDef(cname, "cdef np.%s_t %s = %s.%s" % (typename, cname, dotparent, name))
+        yield CDef(cname, f"cdef np.{typename}_t {cname} = {dotparent}.{name}")
 
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
@@ -334,7 +334,7 @@ def %(name)s(%(cparams)s):
                 defs = ''.join(defs),
                 name = functionname,
                 cparams = ', '.join(str(p) for p in cparams),
-                code = f"""{''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs)}{body}""",
+                code = f"""{''.join(f"{self.bodyindent}{cdef}{self.eol}" for cdef in cdefs)}{body}""",
             )
             bldtext = self.pyxbld
             fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), f"{self.fqmodule.split('.')[-1]}_turbo")
@@ -359,7 +359,7 @@ def %(name)s(%(cparams)s):
         return Complete(getattr(sys.modules[fqmodulename], functionname))
 
     def __repr__(self):
-        return "%s(<function %s>)" % (type(self).__name__, self.name)
+        return f"{type(self).__name__}(<function {self.name}>)"
 
 def readornone(path):
     if os.path.exists(path):
@@ -378,7 +378,7 @@ class Complete:
         return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
 
     def __repr__(self):
-        return "%s(%r)" % (type(self).__name__, self.f)
+        return f"{type(self).__name__}({self.f!r})"
 
 class InstanceComplete:
 
@@ -416,7 +416,7 @@ class Partial:
         return InstancePartial(instance, self.decorated, self.variant)
 
     def __repr__(self):
-        return "%s(%r)" % (type(self).__name__, self.decorated)
+        return f"{type(self).__name__}({self.decorated!r})"
 
 class InstancePartial:
 
