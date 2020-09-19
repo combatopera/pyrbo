@@ -19,7 +19,8 @@ from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderExc
 from .unroll import unroll
 from functools import total_ordering
 from importlib import import_module
-import inspect, itertools, logging, os, re, sys
+from pathlib import Path
+import inspect, itertools, logging, re, sys
 
 log = logging.getLogger(__name__)
 
@@ -337,33 +338,25 @@ def %(name)s(%(cparams)s):
                 code = f"""{''.join(f"{self.bodyindent}{cdef}{self.eol}" for cdef in cdefs)}{body}""",
             )
             bldtext = self.pyxbld
-            fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), f"{self.fqmodule.split('.')[-1]}_turbo")
-            filepath = os.path.join(fileparent, f"{functionname}.pyx")
-            bldpath = f"{filepath}bld"
-            existingtext = readornone(filepath)
-            existingbld = readornone(bldpath)
+            fileparent = Path(sys.modules[self.fqmodule].__file__).parent / f"{self.fqmodule.split('.')[-1]}_turbo"
+            filepath = fileparent / f"{functionname}.pyx"
+            bldpath = filepath.parent / f"{filepath.name}bld"
+            existingtext = _readornone(filepath)
+            existingbld = _readornone(bldpath)
             if text != existingtext or bldtext != existingbld:
-                try:
-                    os.mkdir(fileparent)
-                except OSError:
-                    pass
-                open(os.path.join(fileparent, '__init__.py'), 'w').close()
-                with open(filepath, 'w') as g:
-                    g.write(text)
-                    g.flush()
-                with open(bldpath, 'w') as g:
-                    g.write(bldtext)
-                    g.flush()
+                fileparent.mkdir(exist_ok = True)
+                (fileparent / '__init__.py').write_text('')
+                filepath.write_text(text)
+                bldpath.write_text(bldtext)
                 print("Compiling:", functionname, file=sys.stderr)
         return Complete(getattr(import_module(fqmodulename), functionname))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
 
-def readornone(path):
-    if os.path.exists(path):
-        with open(path) as f:
-            return f.read()
+def _readornone(path):
+    if path.exists():
+        return path.read_text()
 
 class Complete:
 
