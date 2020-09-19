@@ -20,8 +20,9 @@ from .unroll import unroll
 from diapyr.util import innerclass
 from functools import total_ordering
 from importlib import import_module
+from itertools import chain
 from pathlib import Path
-import inspect, itertools, logging, re, sys
+import inspect, logging, re, sys
 
 log = logging.getLogger(__name__)
 
@@ -246,13 +247,11 @@ def make_ext(name, source):
 cimport numpy as np
 import cython
 
-%(defs)s
 @cython.boundscheck(False)
 @cython.cdivision(True) # Don't check for divide-by-zero.
 def %(name)s(%(cparams)s):
 %(code)s'''
-    deftemplate = '''DEF %s = %r
-'''
+    deftemplate = "DEF %s = %r"
     eol = re.search(r'[\r\n]+', pyxbld).group()
     indentpattern = re.compile(r'^\s*')
     colonpattern = re.compile(r':\s*$')
@@ -279,7 +278,7 @@ def %(name)s(%(cparams)s):
         self.paramnames = co_varnames[:co_argcount]
         self.localnames = [n for n in co_varnames[co_argcount:] if 'UNROLL' != n]
         self.constnames = []
-        allnames = set(itertools.chain(self.paramnames, self.localnames))
+        allnames = set(chain(self.paramnames, self.localnames))
         for name, typespec in nametotypespec.items():
             if name not in allnames:
                 if not typespec.ispotentialconst():
@@ -338,10 +337,9 @@ def %(name)s(%(cparams)s):
             unroll(self.body, body, consts, self.eol)
             body = ''.join(body)
             text = self.template % dict(
-                defs = ''.join(defs),
                 name = self.functionname,
                 cparams = ', '.join(str(p) for p in cparams),
-                code = f"""{''.join(f"{self.bodyindent}{cdef}{self.eol}" for cdef in cdefs)}{body}""",
+                code = f"""{''.join(f"{self.bodyindent}{d}{self.eol}" for d in chain(defs, cdefs))}{body}""",
             )
             bldtext = self.pyxbld
             fileparent = Path(sys.modules[self.fqmodule].__file__).parent / f"{self.fqmodule.split('.')[-1]}_turbo"
