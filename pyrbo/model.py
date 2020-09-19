@@ -306,7 +306,7 @@ def %(name)s(%(cparams)s):
         try:
             return self.suffixtocomplete[variant.suffix]
         except KeyError:
-            self.suffixtocomplete[variant.suffix] = f = self._loadcomplete(variant)
+            self.suffixtocomplete[variant.suffix] = f = self.CompleteInfo(variant).load()
             return f
 
     @innerclass
@@ -356,11 +356,10 @@ def %(name)s(%(cparams)s):
                 bldpath.write_text(bldtext)
                 return True
 
-    def _loadcomplete(self, variant):
-        info = self.CompleteInfo(variant)
-        if info.fqmodulename not in sys.modules and info.updatefiles():
-            print("Compiling:", info.functionname, file=sys.stderr)
-        return Complete(getattr(import_module(info.fqmodulename), info.functionname))
+        def load(self):
+            if self.fqmodulename not in sys.modules and self.updatefiles():
+                print("Compiling:", self.functionname, file=sys.stderr)
+            return Complete(getattr(import_module(self.fqmodulename), self.functionname))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
