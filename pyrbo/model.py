@@ -355,8 +355,7 @@ def %(name)s(%(cparams)s):
                     g.write(bldtext)
                     g.flush()
                 print("Compiling:", functionname, file=sys.stderr)
-            import_module(fqmodulename)
-        return Complete(getattr(sys.modules[fqmodulename], functionname))
+        return Complete(getattr(import_module(fqmodulename), functionname))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
