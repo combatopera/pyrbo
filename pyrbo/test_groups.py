@@ -30,5 +30,9 @@ class TestGroups(TestCase):
     def test_works(self):
         self.assertEqual(13, f[X, 6](7))
         self.assertIn(f"{__name__}_turbo.f_5to9", sys.modules)
+        self.assertEqual(13, f[X, 5](8))
+        self.assertEqual(13, f[X, 7](6))
+        self.assertEqual(13, f[X, 8](5))
+        self.assertEqual(13, f[X, 9](4))
         self.assertEqual(13, f[X, 10](3))
         self.assertIn(f"{__name__}_turbo.f_10", sys.modules)
