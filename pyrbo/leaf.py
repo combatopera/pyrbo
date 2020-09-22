@@ -56,8 +56,8 @@ class ClassVariant:
 
 class basegeneric(type):
 
-    def __getitem__(cls, xxx_todo_changeme):
-        (param, arg) = xxx_todo_changeme
+    def __getitem__(cls, paramandarg):
+        param, arg = paramandarg
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         variant = cls.turbo_variant.spinoff(param, arg)
         members = {}

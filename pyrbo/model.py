@@ -17,11 +17,16 @@
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
 from .unroll import unroll
-import functools, importlib, inspect, itertools, logging, os, re, sys
+from diapyr.util import innerclass
+from functools import total_ordering
+from importlib import import_module
+from itertools import chain
+from pathlib import Path
+import inspect, logging, re, sys
 
 log = logging.getLogger(__name__)
 
-@functools.total_ordering
+@total_ordering
 class Placeholder:
 
     isplaceholder = True
@@ -44,7 +49,7 @@ class Placeholder:
     def resolvedarg(self, variant):
         return variant.paramtoarg[self]
 
-@functools.total_ordering
+@total_ordering
 class Type:
 
     isplaceholder = False
@@ -71,7 +76,7 @@ class Type:
         return hash(self.t)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.t)
+        return f"{self.__class__.__name__}({self.t!r})"
 
     def unwrap(self):
         return self.t
@@ -88,7 +93,7 @@ class Obj:
         return str(self.o)
 
     def __repr__(self):
-        return "%s(%r)" % (self.__class__.__name__, self.o)
+        return f"{self.__class__.__name__}({self.o!r})"
 
 class CDef:
 
@@ -102,7 +107,7 @@ class CDef:
 class Array:
 
     def __init__(self, elementtypespec, ndim):
-        self.ndimtext = ", ndim=%s" % ndim if 1 != ndim else ''
+        self.ndimtext = f", ndim={ndim}" if 1 != ndim else ''
         self.zeros = ', '.join(['0'] * ndim)
         self.elementtypespec = elementtypespec
 
@@ -111,22 +116,22 @@ class Array:
 
     def cparam(self, variant, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        name = 'py_' + name
-        return CDef(name, "np.ndarray[np.%s_t%s] %s" % (elementtypename, self.ndimtext, name))
+        name = f"py_{name}"
+        return CDef(name, f"np.ndarray[np.{elementtypename}_t{self.ndimtext}] {name}")
 
     def itercdefs(self, variant, name, isfuncparam):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
         if isfuncparam:
-            yield CDef(name, "cdef np.%s_t* %s = &py_%s[%s]" % (elementtypename, name, name, self.zeros))
+            yield CDef(name, f"cdef np.{elementtypename}_t* {name} = &py_{name}[{self.zeros}]")
         else:
-            yield CDef(name, "cdef np.%s_t* %s" % (elementtypename, name))
+            yield CDef(name, f"cdef np.{elementtypename}_t* {name}")
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         elementtypename = self.elementtypespec.resolvedarg(variant).typename()
-        cname = undparent + '_' + name
-        pyname = 'py_' + cname
-        yield CDef(pyname, "cdef np.ndarray[np.%s_t%s] %s = %s.%s" % (elementtypename, self.ndimtext, pyname, dotparent, name))
-        yield CDef(cname, "cdef np.%s_t* %s = &py_%s_%s[%s]" % (elementtypename, cname, undparent, name, self.zeros))
+        cname = f"{undparent}_{name}"
+        pyname = f"py_{cname}"
+        yield CDef(pyname, f"cdef np.ndarray[np.{elementtypename}_t{self.ndimtext}] {pyname} = {dotparent}.{name}")
+        yield CDef(cname, f"cdef np.{elementtypename}_t* {cname} = &py_{undparent}_{name}[{self.zeros}]")
 
     def iterplaceholders(self):
         if self.elementtypespec.isplaceholder:
@@ -142,17 +147,17 @@ class Scalar:
 
     def cparam(self, variant, name):
         typename = self.typespec.resolvedarg(variant).typename()
-        return CDef(name, "np.%s_t %s" % (typename, name))
+        return CDef(name, f"np.{typename}_t {name}")
 
     def itercdefs(self, variant, name, isfuncparam):
         if not isfuncparam:
             typename = self.typespec.resolvedarg(variant).typename()
-            yield CDef(name, "cdef np.%s_t %s" % (typename, name))
+            yield CDef(name, f"cdef np.{typename}_t {name}")
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
         typename = self.typespec.resolvedarg(variant).typename()
-        cname = undparent + '_' + name
-        yield CDef(cname, "cdef np.%s_t %s = %s.%s" % (typename, cname, dotparent, name))
+        cname = f"{undparent}_{name}"
+        yield CDef(cname, f"cdef np.{typename}_t {cname} = {dotparent}.{name}")
 
     def resolvedobj(self, variant):
         return self.typespec.resolvedarg(variant).o
@@ -180,8 +185,8 @@ class Composite:
                 yield placeholder, FieldResolver(field, resolver)
 
     def iternestedcdefs(self, variant, undparent, dotparent, name):
-        undparent += '_' + name
-        dotparent += '.' + name
+        undparent = f"{undparent}_{name}"
+        dotparent = f"{dotparent}.{name}"
         for field, fieldtype in self.fields:
             for cdef in fieldtype.iternestedcdefs(variant, undparent, dotparent, field):
                 yield cdef
@@ -209,7 +214,7 @@ class Variant:
     def __init__(self, decorated, paramtoarg):
         self.unbound = set(p for p in decorated.placeholders if p not in paramtoarg)
         if not self.unbound:
-            self.suffix = ''.join('_' + arg.discriminator() for _, arg in sorted(paramtoarg.items()))
+            self.suffix = ''.join(f"_{arg.discriminator()}" for _, arg in sorted(paramtoarg.items()))
         self.paramtoarg = paramtoarg
 
     def spinoff(self, decorated, param, arg):
@@ -242,13 +247,11 @@ def make_ext(name, source):
 cimport numpy as np
 import cython
 
-%(defs)s
 @cython.boundscheck(False)
 @cython.cdivision(True) # Don't check for divide-by-zero.
 def %(name)s(%(cparams)s):
 %(code)s'''
-    deftemplate = '''DEF %s = %r
-'''
+    deftemplate = "DEF %s = %r"
     eol = re.search(r'[\r\n]+', pyxbld).group()
     indentpattern = re.compile(r'^\s*')
     colonpattern = re.compile(r':\s*$')
@@ -267,7 +270,7 @@ def %(name)s(%(cparams)s):
         bodyindent = getindent()
         if re.search(r'=\s*LOCAL\s*$', lines[i]) is not None:
             i += 1
-        return bodyindent[functionindentlen:], ''.join(line[functionindentlen:] + cls.eol for line in lines[i:])
+        return bodyindent[functionindentlen:], ''.join(f"{line[functionindentlen:]}{cls.eol}" for line in lines[i:])
 
     def __init__(self, nametotypespec, dynamic, pyfunc):
         co_varnames = pyfunc.__code__.co_varnames # The params followed by the locals.
@@ -275,7 +278,7 @@ def %(name)s(%(cparams)s):
         self.paramnames = co_varnames[:co_argcount]
         self.localnames = [n for n in co_varnames[co_argcount:] if 'UNROLL' != n]
         self.constnames = []
-        allnames = set(itertools.chain(self.paramnames, self.localnames))
+        allnames = set(chain(self.paramnames, self.localnames))
         for name, typespec in nametotypespec.items():
             if name not in allnames:
                 if not typespec.ispotentialconst():
@@ -302,67 +305,66 @@ def %(name)s(%(cparams)s):
         try:
             return self.suffixtocomplete[variant.suffix]
         except KeyError:
-            self.suffixtocomplete[variant.suffix] = f = self.loadcomplete(variant)
+            self.suffixtocomplete[variant.suffix] = f = self.CompleteInfo(variant).load()
             return f
 
-    def loadcomplete(self, variant):
-        functionname = self.name + variant.suffix
-        fqmodulename = self.fqmodule + '_turbo.' + functionname
-        if fqmodulename not in sys.modules:
+    @innerclass
+    class CompleteInfo:
+
+        def __init__(self, variant):
+            self.functionname = f"{self.name}{variant.suffix}"
+            self.fqmodulename = f"{self.fqmodule}_turbo.{self.functionname}"
+            self.variant = variant
+
+        def updatefiles(self):
             cparams = []
             cdefs = []
             for name in self.paramnames:
                 typespec = self.nametotypespec[name]
-                cparams.append(typespec.cparam(variant, name))
-                cdefs.extend(typespec.itercdefs(variant, name, True))
+                cparams.append(typespec.cparam(self.variant, name))
+                cdefs.extend(typespec.itercdefs(self.variant, name, True))
             cdefnames = set(cdef.name for cdef in cparams)
             cdefnames.update(cdef.name for cdef in cdefs)
             for name in self.localnames:
                 if name not in cdefnames:
                     typespec = self.nametotypespec[name]
-                    cdefs.extend(typespec.itercdefs(variant, name, False))
+                    cdefs.extend(typespec.itercdefs(self.variant, name, False))
             defs = []
-            consts = dict([name, self.nametotypespec[name].resolvedobj(variant)] for name in self.constnames)
+            consts = dict([name, self.nametotypespec[name].resolvedobj(self.variant)] for name in self.constnames)
             for item in consts.items():
                 defs.append(self.deftemplate % item)
             body = []
             unroll(self.body, body, consts, self.eol)
             body = ''.join(body)
             text = self.template % dict(
-                defs = ''.join(defs),
-                name = functionname,
+                name = self.functionname,
                 cparams = ', '.join(str(p) for p in cparams),
-                code = ''.join("%s%s%s" % (self.bodyindent, cdef, self.eol) for cdef in cdefs) + body,
+                code = f"""{''.join(f"{self.bodyindent}{d}{self.eol}" for d in chain(defs, cdefs))}{body}""",
             )
             bldtext = self.pyxbld
-            fileparent = os.path.join(os.path.dirname(sys.modules[self.fqmodule].__file__), self.fqmodule.split('.')[-1] + '_turbo')
-            filepath = os.path.join(fileparent, functionname + '.pyx')
-            bldpath = filepath + 'bld'
-            existingtext = readornone(filepath)
-            existingbld = readornone(bldpath)
+            fileparent = Path(sys.modules[self.fqmodule].__file__).parent / f"{self.fqmodule.split('.')[-1]}_turbo"
+            filepath = fileparent / f"{self.functionname}.pyx"
+            bldpath = filepath.parent / f"{filepath.name}bld"
+            existingtext = _readornone(filepath)
+            existingbld = _readornone(bldpath)
             if text != existingtext or bldtext != existingbld:
-                try:
-                    os.mkdir(fileparent)
-                except OSError:
-                    pass
-                open(os.path.join(fileparent, '__init__.py'), 'w').close()
-                with open(filepath, 'w') as g:
-                    g.write(text)
-                    g.flush()
-                with open(bldpath, 'w') as g:
-                    g.write(bldtext)
-                    g.flush()
-                print("Compiling:", functionname, file=sys.stderr)
-            importlib.import_module(fqmodulename)
-        return Complete(getattr(sys.modules[fqmodulename], functionname))
+                fileparent.mkdir(exist_ok = True)
+                (fileparent / '__init__.py').write_text('')
+                filepath.write_text(text)
+                bldpath.write_text(bldtext)
+                return True
+
+        def load(self):
+            if self.fqmodulename not in sys.modules and self.updatefiles():
+                print("Compiling:", self.functionname, file=sys.stderr)
+            return Complete(getattr(import_module(self.fqmodulename), self.functionname))
 
     def __repr__(self):
-        return "%s(<function %s>)" % (type(self).__name__, self.name)
+        return f"{type(self).__name__}(<function {self.name}>)"
 
-def readornone(path):
-    if os.path.exists(path):
-        with open(path) as f:
-            return f.read()
+def _readornone(path):
+    if path.exists():
+        return path.read_text()
 
 class Complete:
 
@@ -376,7 +378,7 @@ class Complete:
         return lambda *args, **kwargs: self.f(instance, *args, **kwargs)
 
     def __repr__(self):
-        return "%s(%r)" % (type(self).__name__, self.f)
+        return f"{type(self).__name__}({self.f!r})"
 
 class InstanceComplete:
 
@@ -402,8 +404,12 @@ class Partial:
     def todynamic(self):
         return Partial(self.decorated, self.variant, True)
 
-    def __getitem__(self, xxx_todo_changeme):
-        (param, arg) = xxx_todo_changeme
+    def updatefiles(self, param, arg):
+        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
+        self.decorated.CompleteInfo(self.variant.spinoff(self.decorated, param, arg)).updatefiles()
+
+    def __getitem__(self, paramandarg):
+        param, arg = paramandarg
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
 
@@ -414,7 +420,7 @@ class Partial:
         return InstancePartial(instance, self.decorated, self.variant)
 
     def __repr__(self):
-        return "%s(%r)" % (type(self).__name__, self.decorated)
+        return f"{type(self).__name__}({self.decorated!r})"
 
 class InstancePartial:
 
@@ -426,8 +432,8 @@ class InstancePartial:
     def __call__(self, *args, **kwargs):
         return self.decorated.getcomplete(self.variant.complete(self.decorated, (self.instance,) + args))(self.instance, *args, **kwargs)
 
-    def __getitem__(self, xxx_todo_changeme1):
-        (param, arg) = xxx_todo_changeme1
+    def __getitem__(self, paramandarg):
+        param, arg = paramandarg
         arg = Type(arg) if isinstance(arg, type) else Obj(arg)
         variant = self.variant.spinoff(self.decorated, param, arg)
         if variant.unbound:
