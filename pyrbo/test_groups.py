@@ -21,7 +21,7 @@ import sys
 
 k = None
 
-@turbo(types = dict(i = int, k = X), groups = dict(X = range(5, 10)))
+@turbo(types = dict(i = int, k = X), groups = {X: range(5, 10)})
 def f(i):
     return i + k
 
