@@ -17,6 +17,7 @@
 
 from .leaf import turbo, X
 from unittest import TestCase
+import sys
 
 k = None
 
@@ -28,4 +29,6 @@ class TestGroups(TestCase):
 
     def test_works(self):
         self.assertEqual(13, f[X, 6](7))
+        self.assertIn(f"{__name__}_turbo.f_5to9", sys.modules)
         self.assertEqual(13, f[X, 10](3))
+        self.assertIn(f"{__name__}_turbo.f_10", sys.modules)
