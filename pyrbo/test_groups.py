@@ -21,8 +21,12 @@ import sys
 
 k = None
 
-@turbo(types = dict(i = int, k = X), groups = {X: range(5, 10)})
+@turbo(types = dict(i = int, k = X), groups = {X: [range(5, 10)]})
 def f(i):
+    return i + k
+
+@turbo(types = dict(i = int, k = X), groups = {X: [[int, float]]})
+def g(i, k):
     return i + k
 
 class TestGroups(TestCase):
@@ -36,3 +40,8 @@ class TestGroups(TestCase):
         self.assertEqual(13, f[X, 9](4))
         self.assertEqual(13, f[X, 10](3))
         self.assertIn(f"{__name__}_turbo.f_10", sys.modules)
+
+    def test_types(self):
+        self.assertEqual(13, g[X, int](6, 7))
+        self.assertIn(f"{__name__}_turbo.g_intETfloat", sys.modules)
+        self.assertEqual(13, g[X, float](6, 7))
