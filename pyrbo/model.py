@@ -276,11 +276,11 @@ class Variant:
         return type(self)(decorated, paramtoarg)
 
     def groupvariants(self, decorated):
-        def args(param):
+        def groupargs(param):
             return self.paramtoarg[param].spread(decorated.groupsets.groups(param))
         params = sorted(self.paramtoarg)
-        for argsets in product(*(args(param) for param in params)):
-            yield type(self)(decorated, dict(zip(params, argsets)))
+        for arglist in product(*(groupargs(param) for param in params)):
+            yield type(self)(decorated, dict(zip(params, arglist)))
 
 class Decorated:
 
