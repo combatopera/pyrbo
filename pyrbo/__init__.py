@@ -16,6 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException
+from .model import nocompile
 from .leaf import generic, LOCAL, turbo, T, U, V, W, X, Y, Z
 
 assert AlreadyBoundException
@@ -24,6 +25,7 @@ assert NoSuchPlaceholderException
 assert NoSuchVariableException
 assert generic
 assert not LOCAL
+assert nocompile
 assert turbo
 assert T
 assert U

@@ -17,14 +17,27 @@
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
 from .unroll import unroll
-from diapyr.util import innerclass
+from diapyr.util import innerclass, singleton
 from functools import total_ordering
 from importlib import import_module
 from itertools import chain, product
 from pathlib import Path
-import inspect, logging, re, sys
+import inspect, logging, re, sys, threading
 
 log = logging.getLogger(__name__)
+threadstate = threading.local()
+
+@singleton
+class nocompile:
+
+    def depth(self):
+        return getattr(threadstate, 'compiledisabled', 0)
+
+    def __enter__(self):
+        threadstate.compiledisabled = self.depth() + 1
+
+    def __exit__(self, *exc_info):
+        threadstate.compiledisabled -= 1
 
 class GroupSets:
 
@@ -395,9 +408,11 @@ def %(name)s(%(cparams)s):
                 return True
 
         def load(self):
+            compileenabled = not nocompile.depth()
             if self.fqmodulename not in sys.modules and self.updatefiles():
-                print("Compiling:", self.groupname, file=sys.stderr)
-            return Complete(getattr(import_module(self.fqmodulename), self.functionname))
+                print('Compiling:' if compileenabled else 'Prepared:', self.groupname, file=sys.stderr)
+            if compileenabled:
+                return Complete(getattr(import_module(self.fqmodulename), self.functionname))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
@@ -443,10 +458,6 @@ class Partial:
 
     def todynamic(self):
         return Partial(self.decorated, self.variant, True)
-
-    def updatefiles(self, param, arg):
-        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
-        self.decorated.CompleteInfo(self.variant.spinoff(self.decorated, param, arg)).updatefiles()
 
     def __getitem__(self, paramandarg):
         param, arg = paramandarg
