@@ -77,7 +77,7 @@ class Type(Arg):
         return self.typename()
 
     def __lt__(self, that):
-        return self.t < that.t
+        return self.t < that.t # FIXME LATER: Does not work.
 
     def __eq__(self, that):
         return self.t == that.t
