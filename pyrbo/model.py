@@ -273,7 +273,7 @@ def %(name)s(%(cparams)s):
             i += 1
         return bodyindent[functionindentlen:], ''.join(f"{line[functionindentlen:]}{cls.eol}" for line in lines[i:])
 
-    def __init__(self, nametotypespec, dynamic, pyfunc):
+    def __init__(self, nametotypespec, dynamic, groups, pyfunc):
         co_varnames = pyfunc.__code__.co_varnames # The params followed by the locals.
         co_argcount = pyfunc.__code__.co_argcount
         self.paramnames = co_varnames[:co_argcount]
@@ -301,6 +301,7 @@ def %(name)s(%(cparams)s):
         self.suffixtocomplete = {}
         self.nametotypespec = nametotypespec
         self.dynamic = dynamic
+        self.groups = groups
 
     def getcomplete(self, variant):
         try:
@@ -446,7 +447,7 @@ class InstancePartial:
 
 class Decorator:
 
-    def __init__(self, nametotypespec, dynamic):
+    def __init__(self, nametotypespec, dynamic, groups):
         def wrap(spec):
             return spec if isinstance(spec, Placeholder) else Type(spec)
         def iternametotypespec(nametotypespec):
@@ -465,7 +466,8 @@ class Decorator:
                 yield name, typespec
         self.nametotypespec = dict(iternametotypespec(nametotypespec))
         self.dynamic = dynamic
+        self.groups = groups
 
     def __call__(self, pyfunc):
-        decorated = Decorated(self.nametotypespec, self.dynamic, pyfunc)
+        decorated = Decorated(self.nametotypespec, self.dynamic, self.groups, pyfunc)
         return partialorcomplete(decorated, Variant(decorated, {}))

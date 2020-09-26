@@ -28,7 +28,8 @@ def turbo(**kwargs):
         kwargs = dict(types = kwargs)
     nametotypespec = kwargs['types']
     dynamic = kwargs.get('dynamic', False)
-    return Decorator(nametotypespec, dynamic)
+    groups = kwargs.get('groups', {})
+    return Decorator(nametotypespec, dynamic, groups)
 
 class ClassVariant:
 
