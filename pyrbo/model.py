@@ -49,8 +49,13 @@ class Placeholder:
     def resolvedarg(self, variant):
         return variant.paramtoarg[self]
 
+class Arg:
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.unwrap()!r})"
+
 @total_ordering
-class Type:
+class Type(Arg):
 
     isplaceholder = False
 
@@ -75,13 +80,10 @@ class Type:
     def __hash__(self):
         return hash(self.t)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.t!r})"
-
     def unwrap(self):
         return self.t
 
-class Obj:
+class Obj(Arg):
 
     def __init__(self, o):
         self.o = o
@@ -92,8 +94,8 @@ class Obj:
     def discriminator(self):
         return str(self.o)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({self.o!r})"
+    def unwrap(self):
+        return self.o
 
 class CDef:
 
