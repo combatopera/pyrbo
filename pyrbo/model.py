@@ -224,7 +224,7 @@ class Variant:
             raise AlreadyBoundException(param, self.paramtoarg[param].unwrap(), arg.unwrap())
         paramtoarg = self.paramtoarg.copy()
         paramtoarg[param] = arg
-        return Variant(decorated, paramtoarg)
+        return type(self)(decorated, paramtoarg)
 
     def complete(self, decorated, args):
         if not decorated.dynamic:
@@ -232,7 +232,7 @@ class Variant:
         paramtoarg = self.paramtoarg.copy()
         for param in self.unbound:
             paramtoarg[param] = decorated.placeholdertoresolver[param](args)
-        return Variant(decorated, paramtoarg)
+        return type(self)(decorated, paramtoarg)
 
 class Decorated:
 
