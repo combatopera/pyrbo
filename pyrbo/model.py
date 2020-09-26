@@ -20,7 +20,7 @@ from .unroll import unroll
 from diapyr.util import innerclass
 from functools import total_ordering
 from importlib import import_module
-from itertools import chain
+from itertools import chain, product
 from pathlib import Path
 import inspect, logging, re, sys
 
@@ -30,6 +30,9 @@ class GroupSets:
 
     def __init__(self, groupsets):
         self.groupsets = groupsets
+
+    def groups(self, param):
+        return self.groupsets.get(param, ())
 
 @total_ordering
 class Placeholder:
@@ -56,6 +59,12 @@ class Placeholder:
 
 class Arg:
 
+    def spread(self, groups):
+        for group in groups:
+            if self.unwrap() in group:
+                return [type(self)(u) for u in group]
+        return [self]
+
     def __repr__(self):
         return f"{self.__class__.__name__}({self.unwrap()!r})"
 
@@ -75,6 +84,9 @@ class Type(Arg):
 
     def discriminator(self):
         return self.typename()
+
+    def groupdiscriminator(self, groups):
+        return 'ET'.join(sorted(a.typename() for a in self.spread(groups)))
 
     def __lt__(self, that):
         return self.t < that.t # FIXME LATER: Does not work.
@@ -97,6 +109,14 @@ class Obj(Arg):
         raise BadArgException(self.o)
 
     def discriminator(self):
+        return str(self.o)
+
+    def groupdiscriminator(self, groups):
+        for group in groups:
+            if self.o in group:
+                if range == type(group) and 1 == abs(group.step):
+                    return f"{min(group)}to{max(group)}"
+                return 'ET'.join(map(str, sorted(group)))
         return str(self.o)
 
     def unwrap(self):
@@ -222,6 +242,7 @@ class Variant:
         self.unbound = set(p for p in decorated.placeholders if p not in paramtoarg)
         if not self.unbound:
             self.suffix = ''.join(f"_{arg.discriminator()}" for _, arg in sorted(paramtoarg.items()))
+            self.groupsuffix = ''.join(f"_{arg.groupdiscriminator(decorated.groupsets.groups(param))}" for param, arg in sorted(paramtoarg.items()))
         self.paramtoarg = paramtoarg
 
     def spinoff(self, decorated, param, arg):
@@ -240,6 +261,13 @@ class Variant:
         for param in self.unbound:
             paramtoarg[param] = decorated.placeholdertoresolver[param](args)
         return type(self)(decorated, paramtoarg)
+
+    def groupvariants(self, decorated):
+        def args(param):
+            return self.paramtoarg[param].spread(decorated.groupsets.groups(param))
+        params = sorted(self.paramtoarg)
+        for argsets in product(*(args(param) for param in params)):
+            yield type(self)(decorated, dict(zip(params, argsets)))
 
 class Decorated:
 
@@ -322,7 +350,8 @@ def %(name)s(%(cparams)s):
 
         def __init__(self, variant):
             self.functionname = f"{self.name}{variant.suffix}"
-            self.fqmodulename = f"{self.fqmodule}_turbo.{self.functionname}"
+            self.groupname = f"{self.name}{variant.groupsuffix}"
+            self.fqmodulename = f"{self.fqmodule}_turbo.{self.groupname}"
             self.variant = variant
 
         def updatefiles(self):
@@ -347,14 +376,14 @@ def %(name)s(%(cparams)s):
                 unroll(self.body, body, consts, self.eol)
                 body = ''.join(body)
                 return self.template % dict(
-                    name = self.functionname,
+                    name = f"{self.name}{variant.suffix}",
                     cparams = ', '.join(str(p) for p in cparams),
                     code = f"""{''.join(f"{self.bodyindent}{d}{self.eol}" for d in chain(defs, cdefs))}{body}""",
                 )
-            text = f"{self.header}{functiontext(self.variant)}"
+            text = f"{self.header}{''.join(functiontext(v) for v in self.variant.groupvariants(self))}"
             bldtext = self.pyxbld
             fileparent = Path(sys.modules[self.fqmodule].__file__).parent / f"{self.fqmodule.split('.')[-1]}_turbo"
-            filepath = fileparent / f"{self.functionname}.pyx"
+            filepath = fileparent / f"{self.groupname}.pyx"
             bldpath = filepath.parent / f"{filepath.name}bld"
             existingtext = _readornone(filepath)
             existingbld = _readornone(bldpath)
@@ -367,7 +396,7 @@ def %(name)s(%(cparams)s):
 
         def load(self):
             if self.fqmodulename not in sys.modules and self.updatefiles():
-                print("Compiling:", self.functionname, file=sys.stderr)
+                print("Compiling:", self.groupname, file=sys.stderr)
             return Complete(getattr(import_module(self.fqmodulename), self.functionname))
 
     def __repr__(self):

@@ -43,5 +43,5 @@ class TestGroups(TestCase):
 
     def test_types(self):
         self.assertEqual(13, g[X, int](6, 7))
-        self.assertIn(f"{__name__}_turbo.g_intETfloat", sys.modules)
+        self.assertIn(f"{__name__}_turbo.g_floatETint", sys.modules)
         self.assertEqual(13, g[X, float](6, 7))
