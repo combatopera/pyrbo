@@ -242,15 +242,16 @@ import numpy as np
 def make_ext(name, source):
     return Extension(name, [source], include_dirs = [np.get_include()])
 '''
-    template = '''# cython: language_level=3
+    header = '''# cython: language_level=3
 
 cimport numpy as np
 import cython
-
+'''
+    template = """
 @cython.boundscheck(False)
 @cython.cdivision(True) # Don't check for divide-by-zero.
 def %(name)s(%(cparams)s):
-%(code)s'''
+%(code)s"""
     deftemplate = "DEF %s = %r"
     eol = re.search(r'[\r\n]+', pyxbld).group()
     indentpattern = re.compile(r'^\s*')
@@ -317,30 +318,32 @@ def %(name)s(%(cparams)s):
             self.variant = variant
 
         def updatefiles(self):
-            cparams = []
-            cdefs = []
-            for name in self.paramnames:
-                typespec = self.nametotypespec[name]
-                cparams.append(typespec.cparam(self.variant, name))
-                cdefs.extend(typespec.itercdefs(self.variant, name, True))
-            cdefnames = set(cdef.name for cdef in cparams)
-            cdefnames.update(cdef.name for cdef in cdefs)
-            for name in self.localnames:
-                if name not in cdefnames:
+            def functiontext(variant):
+                cparams = []
+                cdefs = []
+                for name in self.paramnames:
                     typespec = self.nametotypespec[name]
-                    cdefs.extend(typespec.itercdefs(self.variant, name, False))
-            defs = []
-            consts = dict([name, self.nametotypespec[name].resolvedobj(self.variant)] for name in self.constnames)
-            for item in consts.items():
-                defs.append(self.deftemplate % item)
-            body = []
-            unroll(self.body, body, consts, self.eol)
-            body = ''.join(body)
-            text = self.template % dict(
-                name = self.functionname,
-                cparams = ', '.join(str(p) for p in cparams),
-                code = f"""{''.join(f"{self.bodyindent}{d}{self.eol}" for d in chain(defs, cdefs))}{body}""",
-            )
+                    cparams.append(typespec.cparam(variant, name))
+                    cdefs.extend(typespec.itercdefs(variant, name, True))
+                cdefnames = set(cdef.name for cdef in cparams)
+                cdefnames.update(cdef.name for cdef in cdefs)
+                for name in self.localnames:
+                    if name not in cdefnames:
+                        typespec = self.nametotypespec[name]
+                        cdefs.extend(typespec.itercdefs(variant, name, False))
+                defs = []
+                consts = dict([name, self.nametotypespec[name].resolvedobj(variant)] for name in self.constnames)
+                for item in consts.items():
+                    defs.append(self.deftemplate % item)
+                body = []
+                unroll(self.body, body, consts, self.eol)
+                body = ''.join(body)
+                return self.template % dict(
+                    name = self.functionname,
+                    cparams = ', '.join(str(p) for p in cparams),
+                    code = f"""{''.join(f"{self.bodyindent}{d}{self.eol}" for d in chain(defs, cdefs))}{body}""",
+                )
+            text = f"{self.header}{functiontext(self.variant)}"
             bldtext = self.pyxbld
             fileparent = Path(sys.modules[self.fqmodule].__file__).parent / f"{self.fqmodule.split('.')[-1]}_turbo"
             filepath = fileparent / f"{self.functionname}.pyx"
