@@ -306,7 +306,7 @@ def %(name)s(%(cparams)s):
     colonpattern = re.compile(r':\s*$')
 
     @classmethod
-    def getbody(cls, pyfunc):
+    def _getbody(cls, pyfunc):
         lines = inspect.getsource(pyfunc).splitlines()
         getindent = lambda: cls.indentpattern.search(lines[i]).group()
         i = 0
@@ -335,7 +335,7 @@ def %(name)s(%(cparams)s):
                 self.constnames.append(name) # We'll make a DEF for it.
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
-        self.bodyindent, self.body = self.getbody(pyfunc)
+        self.bodyindent, self.body = self._getbody(pyfunc)
         # Note placeholders includes those in consts, placeholdertoresolver does not:
         self.placeholders = set()
         for typespec in nametotypespec.values():
