@@ -367,7 +367,7 @@ def %(name)s(%(cparams)s):
             self.fqmodulename = f"{self.fqmodule}_turbo.{self.groupname}"
             self.variant = variant
 
-        def updatefiles(self):
+        def _updatefiles(self):
             def functiontext(variant):
                 cparams = []
                 cdefs = []
@@ -409,7 +409,7 @@ def %(name)s(%(cparams)s):
 
         def load(self):
             compileenabled = not nocompile.depth()
-            if self.fqmodulename not in sys.modules and self.updatefiles():
+            if self.fqmodulename not in sys.modules and self._updatefiles():
                 print('Compiling:' if compileenabled else 'Prepared:', self.groupname, file=sys.stderr)
             if compileenabled:
                 return Complete(getattr(import_module(self.fqmodulename), self.functionname))
