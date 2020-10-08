@@ -408,11 +408,19 @@ def %(name)s(%(cparams)s):
                 return True
 
         def load(self):
+            def complete(module):
+                return Complete(getattr(module, self.functionname))
+            try:
+                m = import_module(self.fqmodulename)
+            except ImportError:
+                pass
+            else:
+                return complete(m)
             compileenabled = not nocompile.depth()
-            if self.fqmodulename not in sys.modules and self._updatefiles():
+            if self._updatefiles():
                 print('Compiling:' if compileenabled else 'Prepared:', self.groupname, file=sys.stderr)
             if compileenabled:
-                return Complete(getattr(import_module(self.fqmodulename), self.functionname))
+                return complete(import_module(self.fqmodulename))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
