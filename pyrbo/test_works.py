@@ -16,6 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from .leaf import turbo, T
+from .model import nocompile
 from unittest import TestCase
 import logging, numpy as np, os, time
 
@@ -58,6 +59,20 @@ class TestTurbo(TestCase):
             actual = np.empty(n, dtype = np.float32)
             task(n, x, y, actual)
             self.assertTrue(np.array_equal(expected, actual))
+
+    def test_compileafternocompile(self):
+        def loadtdiff():
+            from .test_data.tdiff import tdiff
+            return tdiff
+        with nocompile:
+            loadtdiff()
+        tdiff = loadtdiff()
+        n = 5
+        x = np.arange(n, dtype = np.float32)
+        y = np.arange(n, dtype = np.float32) * 2
+        out = np.empty(n, dtype = np.float32)
+        tdiff(n, x, y, out)
+        self.assertEqual([0, -1, -2, -3, -4], list(out))
 
 class TestSpeed(TestCase):
 
