@@ -394,18 +394,11 @@ def %(name)s(%(cparams)s):
                     code = f"""{''.join(f"{self.bodyindent}{d}{self.eol}" for d in chain(defs, cdefs))}{body}""",
                 )
             text = f"{self.header}{''.join(functiontext(v) for v in self.variant.groupvariants(self))}"
-            bldtext = self.pyxbld
             fileparent = Path(sys.modules[self.fqmodule].__file__).parent / f"{self.fqmodule.split('.')[-1]}_turbo"
-            filepath = fileparent / f"{self.groupname}.pyx"
-            bldpath = filepath.parent / f"{filepath.name}bld"
-            existingtext = _readornone(filepath)
-            existingbld = _readornone(bldpath)
-            if text != existingtext or bldtext != existingbld:
-                fileparent.mkdir(exist_ok = True)
-                (fileparent / '__init__.py').write_text('')
-                filepath.write_text(text)
-                bldpath.write_text(bldtext)
-                return True
+            fileparent.mkdir(exist_ok = True)
+            (fileparent / '__init__.py').write_text('')
+            (fileparent / f"{self.groupname}.pyx").write_text(text)
+            (fileparent / f"{self.groupname}.pyxbld").write_text(self.pyxbld)
 
         def load(self):
             def complete(module):
@@ -416,18 +409,14 @@ def %(name)s(%(cparams)s):
                 pass
             else:
                 return complete(m)
+            self._updatefiles()
             compileenabled = not nocompile.depth()
-            if self._updatefiles():
-                print('Compiling:' if compileenabled else 'Prepared:', self.groupname, file=sys.stderr)
+            print('Compiling:' if compileenabled else 'Prepared:', self.groupname, file=sys.stderr)
             if compileenabled:
                 return complete(import_module(self.fqmodulename))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
-
-def _readornone(path):
-    if path.exists():
-        return path.read_text()
 
 class Complete:
 
