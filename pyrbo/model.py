@@ -402,6 +402,7 @@ def %(name)s(%(cparams)s):
 
         def load(self):
             try:
+                # FIXME: This may compile stale source!
                 m = import_module(self.fqmodulename)
             except ImportError:
                 self._updatefiles()
