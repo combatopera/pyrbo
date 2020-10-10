@@ -401,27 +401,21 @@ def %(name)s(%(cparams)s):
             (fileparent / f"{self.groupname}.pyxbld").write_text(self.pyxbld)
 
         def load(self):
-            def complete(module):
-                return Complete(getattr(module, self.functionname))
             try:
                 m = import_module(self.fqmodulename)
             except ImportError:
-                pass
-            else:
-                return complete(m)
-            self._updatefiles()
-            compileenabled = not nocompile.depth()
-            print('Compiling:' if compileenabled else 'Prepared:', self.groupname, file=sys.stderr)
-            if compileenabled:
-                return complete(import_module(self.fqmodulename))
+                self._updatefiles()
+                compileenabled = not nocompile.depth()
+                print('Compiling:' if compileenabled else 'Prepared:', self.groupname, file=sys.stderr)
+                if not compileenabled:
+                    return Deferred(self.fqmodulename, self.functionname)
+                m = import_module(self.fqmodulename)
+            return Complete(getattr(m, self.functionname))
 
     def __repr__(self):
         return f"{type(self).__name__}(<function {self.name}>)"
 
-class Complete:
-
-    def __init__(self, f):
-        self.f = f
+class BaseComplete:
 
     def __call__(self, *args, **kwargs):
         return self.f(*args, **kwargs)
@@ -431,6 +425,26 @@ class Complete:
 
     def __repr__(self):
         return f"{type(self).__name__}({self.f!r})"
+
+class Complete(BaseComplete):
+
+    def __init__(self, f):
+        self.f = f
+
+class Deferred(BaseComplete):
+
+    @property
+    def f(self):
+        return self._getf()
+
+    def __init__(self, modulename, functionname):
+        self.modulename = modulename
+        self.functionname = functionname
+
+    def _getf(self):
+        f = getattr(import_module(self.modulename), self.functionname)
+        self._getf = lambda: f
+        return f
 
 class InstanceComplete:
 

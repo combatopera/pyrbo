@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from .leaf import turbo, T
-from .model import nocompile
+from .model import Deferred, nocompile
 from unittest import TestCase
 import logging, numpy as np, os, time
 
@@ -60,19 +60,28 @@ class TestTurbo(TestCase):
             task(n, x, y, actual)
             self.assertTrue(np.array_equal(expected, actual))
 
-    def test_compileafternocompile(self):
+    def test_deferredcompile(self):
         def loadtdiff():
             from .test_data.tdiff import tdiff
             return tdiff
         with nocompile:
-            loadtdiff()
-        tdiff = loadtdiff()
+            tdiff0 = loadtdiff()
+        tdiff = loadtdiff() # XXX: Really not possible to compile here?
+        self.assertIs(tdiff0, tdiff)
         n = 5
         x = np.arange(n, dtype = np.float32)
         y = np.arange(n, dtype = np.float32) * 2
         out = np.empty(n, dtype = np.float32)
-        tdiff(n, x, y, out)
-        self.assertEqual([0, -1, -2, -3, -4], list(out))
+        for _ in range(2):
+            tdiff(n, x, y, out) # First time load module, second time use cached wrapper and function.
+            self.assertEqual([0, -1, -2, -3, -4], list(out))
+
+class TestDeferred(TestCase):
+
+    def test_cache(self):
+        d = Deferred(__name__, type(self).__name__)
+        for _ in range(2):
+            self.assertEqual(type(self), d.f)
 
 class TestSpeed(TestCase):
 
