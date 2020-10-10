@@ -83,6 +83,15 @@ class TestDeferred(TestCase):
         for _ in range(2):
             self.assertEqual(type(self), d.f)
 
+    def test_nocompile(self):
+        d = Deferred("%s.test_data.dnocompile" % __package__, 'dummy')
+        with nocompile, self.assertRaises(AssertionError):
+            d.f
+        from .test_data import dnocompile
+        del dnocompile
+        with nocompile:
+            d.f
+
 class TestSpeed(TestCase):
 
     ntomaxreltime = {10000: 1.5, 100000: 1.5} if 'true' == os.environ.get('TRAVIS') else {}

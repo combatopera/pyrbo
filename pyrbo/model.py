@@ -442,6 +442,7 @@ class Deferred(BaseComplete):
         self.functionname = functionname
 
     def _getf(self):
+        assert self.modulename in sys.modules or not nocompile.depth()
         f = getattr(import_module(self.modulename), self.functionname)
         self._getf = lambda: f
         return f
