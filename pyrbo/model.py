@@ -335,7 +335,10 @@ def %(name)s(%(cparams)s):
                 self.constnames.append(name) # We'll make a DEF for it.
         self.fqmodule = pyfunc.__module__
         self.name = pyfunc.__name__
-        self.bodyindent, self.body = self._getbody(pyfunc)
+        try:
+            self.bodyindent, self.body = self._getbody(pyfunc)
+        except OSError:
+            pass # No source, assume binary dist with shared lib bundled.
         # Note placeholders includes those in consts, placeholdertoresolver does not:
         self.placeholders = set()
         for typespec in nametotypespec.values():
