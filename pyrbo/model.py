@@ -355,7 +355,7 @@ def %(name)s(%(cparams)s):
         try:
             return self.suffixtocomplete[variant.suffix]
         except KeyError:
-            self.suffixtocomplete[variant.suffix] = f = self.CompleteInfo(variant).load()
+            self.suffixtocomplete[variant.suffix] = f = self.CompleteInfo(variant).load() # TODO: Do not cache Deferred.
             return f
 
     @innerclass
