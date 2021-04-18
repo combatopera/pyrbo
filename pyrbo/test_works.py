@@ -18,7 +18,7 @@
 from .leaf import turbo, T
 from .model import Deferred, nocompile
 from unittest import TestCase
-import logging, numpy as np, os, time
+import logging, numpy as np, time
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class TestDeferred(TestCase):
 
 class TestSpeed(TestCase):
 
-    ntomaxreltime = {10000: 1.5, 100000: 1.5} if 'true' == os.environ.get('TRAVIS') else {}
+    ntomaxreltime = {10000: 1.1, 100000: 1.6}
 
     def test_fastenough(self):
         trials = 20
