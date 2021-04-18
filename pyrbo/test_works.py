@@ -94,7 +94,7 @@ class TestDeferred(TestCase):
 
 class TestSpeed(TestCase):
 
-    ntomaxreltime = {10000: 1.1, 100000: 1.6}
+    ntomaxreltime = {10000: 1.2, 100000: 1.7}
 
     def test_fastenough(self):
         trials = 20
