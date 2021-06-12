@@ -97,6 +97,7 @@ class TestDeferred(TestCase):
 class TestSpeed(TestCase):
 
     reftask = staticmethod(npsum)
+    strikes = 3
     trials = 100
 
     def _measure(self, task, size):
@@ -116,9 +117,17 @@ class TestSpeed(TestCase):
             reftime = median(self._measure(self.reftask, size))
             _stderr(f"{self.reftask} median: {reftime:.3f}")
             for task in tsum, gsum[T, np.float32]:
-                t = min(self._measure(task, size))
-                _stderr(f"{task} min: {t:.3f}")
-                self.assertLessEqual(t, reftime)
+                for strike in (1 + s for s in range(self.strikes)):
+                    t = min(self._measure(task, size))
+                    _stderr(f"{task} min: {t:.3f}")
+                    try:
+                        self.assertLessEqual(t, reftime)
+                        break
+                    except AssertionError:
+                        _stderr(f"strike: {strike}")
+                        if strike == self.strikes:
+                            raise
+                        time.sleep(10)
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
