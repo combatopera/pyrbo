@@ -17,8 +17,6 @@
 
 from .leaf import turbo, T
 from .model import Deferred, nocompile
-from fractions import Fraction
-from random import uniform
 from unittest import TestCase
 import numpy as np, sys, time
 
@@ -95,49 +93,35 @@ class TestDeferred(TestCase):
         with nocompile:
             d.f
 
-def _percentile(data, p):
-    i = (len(data) - 1) * p / 100
-    assert 1 == i.denominator
-    return sorted(data)[i.numerator]
-
 class TestSpeed(TestCase):
 
-    maxstrike = 10
-    percentile = Fraction(2, 3) * 100
+    excludeexps = {4, 5}
+    minwins = .9
     reftask = staticmethod(npsum)
-    strikesleep = range(10, 60)
-    trials = 121
+    trials = 100
 
-    def _measure(self, task, size):
+    def _compare(self, task, size):
         x = np.arange(size, dtype = np.float32)
         y = np.arange(size, dtype = np.float32) * 2
         out = np.empty(size, dtype = np.float32)
-        times = []
+        n = 0
         for _ in range(self.trials):
             mark = time.time()
+            self.reftask(size, x, y, out)
+            (reftime, mark), = ((t - mark, t) for t in [time.time()])
             task(size, x, y, out)
-            times.append((time.time() - mark) * 1000)
-        return times
+            n += time.time() - mark <= reftime
+        return n / self.trials
 
     def test_fastenough(self):
-        for size in (10 ** e for e in range(7)):
+        for exp in range(7):
+            size = 10 ** exp
             _stderr(f"size: {size}")
             for task in tsum, gsum[T, np.float32]:
-                for strike in (1 + s for s in range(self.maxstrike)):
-                    reftime = _percentile(self._measure(self.reftask, size), self.percentile)
-                    _stderr(f"{self.reftask} {self.percentile}th percentile: {reftime:.3f}")
-                    t = min(self._measure(task, size))
-                    _stderr(f"{task} min: {t:.3f}")
-                    try:
-                        self.assertLessEqual(t, reftime)
-                        break
-                    except AssertionError:
-                        _stderr(f"strike: {strike}")
-                        if strike == self.maxstrike:
-                            raise
-                    sleeptime = uniform(self.strikesleep.start, self.strikesleep.stop)
-                    _stderr(f"sleep: {sleeptime:.3f}")
-                    time.sleep(sleeptime)
+                wins = self._compare(task, size)
+                _stderr(f"{task} wins: {wins}")
+                if exp not in self.excludeexps:
+                    self.assertGreaterEqual(wins, self.minwins)
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
