@@ -17,10 +17,12 @@
 
 from .leaf import turbo, T
 from .model import Deferred, nocompile
+from statistics import median
 from unittest import TestCase
-import logging, numpy as np, time
+import numpy as np, sys, time
 
-log = logging.getLogger(__name__)
+def _stderr(*args):
+    print(*args, file = sys.stderr)
 
 def pysum(n, x, y, out):
     for i in range(n):
@@ -94,37 +96,30 @@ class TestDeferred(TestCase):
 
 class TestSpeed(TestCase):
 
-    ntomaxreltime = {10000: 1.2, 100000: 1.7}
+    reftask = staticmethod(npsum)
+    trials = 20
+
+    def _measure(self, task, size):
+        x = np.arange(size, dtype = np.float32)
+        y = np.arange(size, dtype = np.float32) * 2
+        out = np.empty(size, dtype = np.float32)
+        times = []
+        for _ in range(self.trials):
+            mark = time.time()
+            task(size, x, y, out)
+            times.append((time.time() - mark) * 1000)
+        return times
 
     def test_fastenough(self):
-        trials = 20
-        outliers = 2
-        meanof = lambda v: sum(v) / len(v)
-        nandtasktotimes = {}
-        for n in range(2, 6):
-            n = 10 ** n
-            log.info("n: %s", n)
-            x = np.arange(n, dtype = np.float32)
-            y = np.arange(n, dtype = np.float32) * 2
-            for task in npsum, tsum, gsum[T, np.float32]:
-                log.info("task: %s", task)
-                out = np.empty(n, dtype = np.float32)
-                times = []
-                for _ in range(trials):
-                    t = time.time()
-                    task(n, x, y, out)
-                    times.append((time.time() - t) * 1000)
-                times.sort()
-                log.info("trials: %s", ' '.join("%.6f" % q for q in times))
-                nandtasktotimes[n, task] = times[outliers:-outliers]
-        fails = []
-        for (n, task), times in nandtasktotimes.items():
-            if npsum != task:
-                maxreltime = self.ntomaxreltime.get(n, 1)
-                reltime = meanof(times) / meanof(nandtasktotimes[n, npsum])
-                if reltime > maxreltime:
-                    fails.append("(n = %r, task = %r, reltime = %r, maxreltime = %r)" % (n, task, reltime, maxreltime))
-        self.assertEqual([], fails)
+        for exp in range(2, 6):
+            size = 10 ** exp
+            _stderr(f"size: {size}")
+            reftime = median(self._measure(self.reftask, size))
+            _stderr(f"{self.reftask} median: {reftime:.3f}")
+            for task in tsum, gsum[T, np.float32]:
+                t = min(self._measure(task, size))
+                _stderr(f"{task} min: {t:.3f}")
+                self.assertLessEqual(t, reftime)
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
