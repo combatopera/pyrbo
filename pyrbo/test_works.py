@@ -96,7 +96,7 @@ class TestDeferred(TestCase):
 class TestSpeed(TestCase):
 
     excludeexps = {4, 5}
-    minwins = .8
+    minwins = .85
     reftask = staticmethod(npsum)
     trials = 100
 
