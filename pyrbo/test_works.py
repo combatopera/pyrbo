@@ -111,8 +111,7 @@ class TestSpeed(TestCase):
         return times
 
     def test_fastenough(self):
-        for exp in range(2, 6):
-            size = 10 ** exp
+        for size in (10 ** e for e in range(2, 6)):
             _stderr(f"size: {size}")
             reftime = median(self._measure(self.reftask, size))
             _stderr(f"{self.reftask} median: {reftime:.3f}")
