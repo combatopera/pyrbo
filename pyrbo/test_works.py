@@ -96,7 +96,8 @@ class TestDeferred(TestCase):
 class TestSpeed(TestCase):
 
     excludeexps = {4, 5}
-    minwins = .85
+    maxexp = 6
+    minwins = .8
     reftask = staticmethod(npsum)
     trials = 100
 
@@ -114,7 +115,7 @@ class TestSpeed(TestCase):
         return n / self.trials
 
     def test_fastenough(self):
-        for exp in range(7):
+        for exp in range(self.maxexp + 1):
             size = 10 ** exp
             _stderr(f"size: {size}")
             for task in tsum, gsum[T, np.float32]:
