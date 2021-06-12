@@ -97,7 +97,7 @@ class TestDeferred(TestCase):
 class TestSpeed(TestCase):
 
     reftask = staticmethod(npsum)
-    trials = 20
+    trials = 100
 
     def _measure(self, task, size):
         x = np.arange(size, dtype = np.float32)
@@ -111,7 +111,7 @@ class TestSpeed(TestCase):
         return times
 
     def test_fastenough(self):
-        for size in (10 ** e for e in range(2, 6)):
+        for size in (10 ** e for e in range(7)):
             _stderr(f"size: {size}")
             reftime = median(self._measure(self.reftask, size))
             _stderr(f"{self.reftask} median: {reftime:.3f}")
