@@ -102,10 +102,10 @@ def _percentile(data, p):
 
 class TestSpeed(TestCase):
 
-    maxstrike = 5
+    maxstrike = 10
     percentile = Fraction(2, 3) * 100
     reftask = staticmethod(npsum)
-    strikesleep = range(10, 30)
+    strikesleep = range(10, 60)
     trials = 121
 
     def _measure(self, task, size):
