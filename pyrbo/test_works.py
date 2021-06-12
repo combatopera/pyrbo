@@ -97,7 +97,8 @@ class TestDeferred(TestCase):
 class TestSpeed(TestCase):
 
     reftask = staticmethod(npsum)
-    strikes = 3
+    strikes = 5
+    strikesleep = 10
     trials = 100
 
     def _measure(self, task, size):
@@ -127,7 +128,7 @@ class TestSpeed(TestCase):
                         _stderr(f"strike: {strike}")
                         if strike == self.strikes:
                             raise
-                        time.sleep(10)
+                        time.sleep(strike * self.strikesleep)
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
