@@ -17,7 +17,8 @@
 
 from .leaf import turbo, T
 from .model import Deferred, nocompile
-from statistics import median
+from fractions import Fraction
+from random import uniform
 from unittest import TestCase
 import numpy as np, sys, time
 
@@ -94,12 +95,18 @@ class TestDeferred(TestCase):
         with nocompile:
             d.f
 
+def _percentile(data, p):
+    i = (len(data) - 1) * p / 100
+    assert 1 == i.denominator
+    return sorted(data)[i.numerator]
+
 class TestSpeed(TestCase):
 
+    maxstrike = 5
+    percentile = Fraction(2, 3) * 100
     reftask = staticmethod(npsum)
-    strikes = 5
-    strikesleep = 10
-    trials = 100
+    strikesleep = range(10, 30)
+    trials = 121
 
     def _measure(self, task, size):
         x = np.arange(size, dtype = np.float32)
@@ -115,10 +122,10 @@ class TestSpeed(TestCase):
     def test_fastenough(self):
         for size in (10 ** e for e in range(7)):
             _stderr(f"size: {size}")
-            reftime = median(self._measure(self.reftask, size))
-            _stderr(f"{self.reftask} median: {reftime:.3f}")
             for task in tsum, gsum[T, np.float32]:
-                for strike in (1 + s for s in range(self.strikes)):
+                for strike in (1 + s for s in range(self.maxstrike)):
+                    reftime = _percentile(self._measure(self.reftask, size), self.percentile)
+                    _stderr(f"{self.reftask} {self.percentile}th percentile: {reftime:.3f}")
                     t = min(self._measure(task, size))
                     _stderr(f"{task} min: {t:.3f}")
                     try:
@@ -126,9 +133,11 @@ class TestSpeed(TestCase):
                         break
                     except AssertionError:
                         _stderr(f"strike: {strike}")
-                        if strike == self.strikes:
+                        if strike == self.maxstrike:
                             raise
-                        time.sleep(strike * self.strikesleep)
+                    sleeptime = uniform(self.strikesleep.start, self.strikesleep.stop)
+                    _stderr(f"sleep: {sleeptime:.3f}")
+                    time.sleep(sleeptime)
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
