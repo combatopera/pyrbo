@@ -17,6 +17,8 @@
 
 from .leaf import turbo, T
 from .model import Deferred, nocompile
+from hashlib import md5
+from socket import getfqdn
 from unittest import TestCase
 import numpy as np, sys, time
 
@@ -95,7 +97,7 @@ class TestDeferred(TestCase):
 
 class TestSpeed(TestCase):
 
-    excludeexps = {4, 5}
+    excludeexps = {4, 5} if 'ad566fda18c44300e1515aef7ed59695' == md5(getfqdn().encode()).hexdigest() else set()
     maxexp = 6
     minwins = .8
     reftask = staticmethod(npsum)
