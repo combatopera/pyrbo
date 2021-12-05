@@ -28,3 +28,4 @@ requires +=
     nativecommon>=4
     numpy>=1.19.1
 pyversions += 3
+buildbot enabled = true
