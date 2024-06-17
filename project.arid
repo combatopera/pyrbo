@@ -16,16 +16,19 @@
 : along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 author = Andrzej Cichocki
+buildbot enabled = true
+github account = combatopera
 name = pyrbo
-years +=
-    2015
-    2016
-    2017
-    2020
+pypi account = combatopera
+pyversions += 3
 requires +=
     Cython>=0.29.21
     diapyr>=18
     nativecommon>=4
     numpy>=1.19.1
-pyversions += 3
-buildbot enabled = true
+tagline = Python JIT compiler for near-native performance of low-level arithmetic
+years +=
+    2015
+    2016
+    2017
+    2020
