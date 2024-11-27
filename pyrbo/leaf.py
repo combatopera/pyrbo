@@ -17,9 +17,9 @@
 
 from .common import AlreadyBoundException, NoSuchPlaceholderException
 from .model import Decorator, Obj, Partial, Placeholder, Type
-import initnative
+from diapyr.util import initnative
 
-del initnative
+initnative()
 globals().update([p.name, p] for p in (Placeholder(chr(i)) for i in range(ord('T'), ord('Z') + 1)))
 LOCAL = None
 
