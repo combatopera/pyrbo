@@ -24,7 +24,7 @@ pypi account = combatopera
 pyversions += 3
 requires +=
     Cython>=0.29.21
-    diapyr
+    diapyr>=31
     numpy>=1.19.1,<2
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
 years +=
