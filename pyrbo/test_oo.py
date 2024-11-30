@@ -48,7 +48,7 @@ class My2:
         z = self_x - y
         return z
 
-@turbo(obj = dict(field = int))
+@turbo(obj = dict(field = np.int32))
 def fieldlocal(obj):
     obj_field = 6
     if False:

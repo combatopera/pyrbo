@@ -25,7 +25,7 @@ pyversions += 3
 requires +=
     Cython>=0.29.21
     diapyr>=31
-    numpy>=1.19.1,<2
+    numpy>=1.19.1
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
 years +=
     2015
