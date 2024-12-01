@@ -22,6 +22,9 @@ globals().update([p.name, p] for p in (Placeholder(chr(i)) for i in range(ord('T
 LOCAL = None
 
 def turbo(**kwargs):
+    '''Accelerate the decorated function or method using Cython.
+    The `types` kwarg is a dict of local variables (including params) to their numpy type.
+    (If `types` would be the only kwarg, its contents may be provided to `turbo` directly.)'''
     if 'types' not in kwargs:
         kwargs = dict(types = kwargs)
     nametotypespec = kwargs['types']

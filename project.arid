@@ -18,8 +18,11 @@
 author = Andrzej Cichocki
 buildbot enabled = true
 github account = combatopera
+internal_module +=
+    pyrbo.common
+    pyrbo.jit
+    pyrbo.unroll
 name = pyrbo
-pydoc_enabled = false
 pypi account = combatopera
 pyversions += 3
 requires += diapyr>=18

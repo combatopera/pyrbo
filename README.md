@@ -18,3 +18,30 @@ venvname/bin/pip install -U pip
 venvname/bin/pip install pyrbo
 . venvname/bin/activate
 ```
+
+## API
+
+<a id="pyrbo"></a>
+
+### pyrbo
+
+<a id="pyrbo.leaf"></a>
+
+### pyrbo.leaf
+
+<a id="pyrbo.leaf.turbo"></a>
+
+###### turbo
+
+```python
+def turbo(**kwargs)
+```
+
+Accelerate the decorated function or method using Cython.
+The `types` kwarg is a dict of local variables (including params) to their numpy type.
+(If `types` would be the only kwarg, its contents may be provided to `turbo` directly.)
+
+<a id="pyrbo.model"></a>
+
+### pyrbo.model
+
