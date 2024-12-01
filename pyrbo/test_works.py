@@ -19,6 +19,7 @@ from .leaf import turbo, T
 from .model import Deferred, nocompile
 from diapyr.util import invokeall
 from functools import partial
+from statistics import median
 from unittest import TestCase
 import numpy as np, sys, time
 
@@ -97,31 +98,41 @@ class TestDeferred(TestCase):
 
 class TestSpeed(TestCase):
 
-    sizes = [10 ** exp for exp in range(7) if exp not in {4, 5}]
-    minwins = .8
-    reftask = staticmethod(npsum)
-    tasks = tsum, gsum[T, np.float32]
-    trials = 100
+    class Task:
 
-    def _compare(self, task, size):
+        coarse = 13
+        fine = 15
+
+        def __init__(self, task):
+            self.task = task
+
+        def _onetime(self, args):
+            r = range(self.fine)
+            mark = time.time()
+            for _ in r:
+                self.task(*args)
+            return (time.time() - mark) / self.fine
+
+        def gettime(self, *args):
+            return median(self._onetime(args) for _ in range(self.coarse))
+
+    sizes = [10 ** exp for exp in range(8) if exp not in {4, 5}]
+    maxratio = 1
+    reftask = Task(npsum)
+    tasks = list(map(Task, [tsum, gsum[T, np.float32]]))
+
+    def _ratios(self, size):
         x = np.arange(size, dtype = np.float32)
         y = np.arange(size, dtype = np.float32) * 2
         out = np.empty(size, dtype = np.float32)
-        n = 0
-        for _ in range(self.trials):
-            mark = time.time()
-            self.reftask(size, x, y, out)
-            (reftime, mark), = ((t - mark, t) for t in [time.time()])
-            task(size, x, y, out)
-            n += time.time() - mark <= reftime
-        return n / self.trials
+        reftime = self.reftask.gettime(size, x, y, out)
+        for task in self.tasks:
+            r = task.gettime(size, x, y, out) / reftime
+            _stderr(r)
+            yield r
 
     def test_fastenough(self):
-        def check(size, task):
-            wins = self._compare(task, size)
-            _stderr(f"Size {size} task {task} wins: {wins}")
-            self.assertGreaterEqual(wins, self.minwins)
-        invokeall(partial(check, size, task) for size in self.sizes for task in self.tasks)
+        invokeall(partial(self.assertLessEqual, ratio, self.maxratio) for size in self.sizes for ratio in self._ratios(size))
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
