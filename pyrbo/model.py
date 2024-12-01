@@ -404,6 +404,8 @@ def %(name)s(%(cparams)s):
             (fileparent / f"{self.groupname}.pyxbld").write_text(self.pyxbld)
 
         def load(self):
+            from . import jit
+            del jit
             try:
                 # FIXME: This may compile stale source!
                 m = import_module(self.fqmodulename)
