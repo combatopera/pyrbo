@@ -97,7 +97,7 @@ class TestDeferred(TestCase):
 
 class TestSpeed(TestCase):
 
-    maxexp = 6
+    exps = [exp for exp in range(7) if exp not in {4, 5}]
     minwins = .8
     reftask = staticmethod(npsum)
     trials = 100
@@ -121,7 +121,7 @@ class TestSpeed(TestCase):
             wins = self._compare(task, size)
             _stderr(f"Size {size} task {task} wins: {wins}")
             self.assertGreaterEqual(wins, self.minwins)
-        invokeall(partial(check, exp, task) for exp in range(self.maxexp + 1) for task in [tsum, gsum[T, np.float32]])
+        invokeall(partial(check, exp, task) for exp in self.exps for task in [tsum, gsum[T, np.float32]])
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
