@@ -100,7 +100,7 @@ class TestBuf(TestCase):
             self.assertEqual(names.pop(0), bufcls.__name__)
             v = np.zeros(10, dtype = t)
             buf = bufcls(v)
-            buf.fillpart(4, 6, 5)
+            buf.fillpart(4, 6, np.int32(5))
             self.assertEqual([0, 0, 0, 0, 5, 5, 0, 0, 0, 0], list(v))
         try:
             Buf[Z, None]
