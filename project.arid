@@ -24,7 +24,9 @@ pypi account = combatopera
 pyversions += 3
 requires += diapyr>=31
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
-test requires += numpy
+test requires +=
+    Cython
+    numpy
 years +=
     2015
     2016
