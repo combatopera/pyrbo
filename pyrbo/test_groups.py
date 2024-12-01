@@ -17,7 +17,7 @@
 
 from .leaf import turbo, X
 from unittest import TestCase
-import sys
+import numpy as np, sys
 
 k = None
 
