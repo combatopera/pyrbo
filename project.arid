@@ -25,8 +25,8 @@ pyversions += 3
 requires += diapyr>=18
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
 test requires +=
-    Cython
-    numpy
+    Cython>=3
+    numpy>=2
 years +=
     2015
     2016

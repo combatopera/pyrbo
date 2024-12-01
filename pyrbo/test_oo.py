@@ -57,7 +57,7 @@ def fieldlocal(obj):
 class TestOO(TestCase):
 
     def test_works(self):
-        my = My(5)
+        my = My(np.int32(5))
         self.assertEqual(11, my.plus(6))
         self.assertEqual(11, my.plus2(6))
 
