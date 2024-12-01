@@ -17,6 +17,8 @@
 
 from .leaf import turbo, T
 from .model import Deferred, nocompile
+from diapyr.util import invokeall
+from functools import partial
 from unittest import TestCase
 import numpy as np, sys, time
 
@@ -114,13 +116,12 @@ class TestSpeed(TestCase):
         return n / self.trials
 
     def test_fastenough(self):
-        for exp in range(self.maxexp + 1):
+        def check(exp, task):
             size = 10 ** exp
-            _stderr(f"size: {size}")
-            for task in tsum, gsum[T, np.float32]:
-                wins = self._compare(task, size)
-                _stderr(f"{task} wins: {wins}")
-                self.assertGreaterEqual(wins, self.minwins)
+            wins = self._compare(task, size)
+            _stderr(f"Size {size} task {task} wins: {wins}")
+            self.assertGreaterEqual(wins, self.minwins)
+        invokeall(partial(check, exp, task) for exp in range(self.maxexp + 1) for task in [tsum, gsum[T, np.float32]])
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
