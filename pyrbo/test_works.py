@@ -17,8 +17,6 @@
 
 from .leaf import turbo, T
 from .model import Deferred, nocompile
-from hashlib import md5
-from socket import getfqdn
 from unittest import TestCase
 import numpy as np, sys, time
 
@@ -97,7 +95,6 @@ class TestDeferred(TestCase):
 
 class TestSpeed(TestCase):
 
-    excludeexps = {4, 5} if 'ad566fda18c44300e1515aef7ed59695' == md5(getfqdn().encode()).hexdigest() else set()
     maxexp = 6
     minwins = .8
     reftask = staticmethod(npsum)
@@ -123,8 +120,7 @@ class TestSpeed(TestCase):
             for task in tsum, gsum[T, np.float32]:
                 wins = self._compare(task, size)
                 _stderr(f"{task} wins: {wins}")
-                if exp not in self.excludeexps:
-                    self.assertGreaterEqual(wins, self.minwins)
+                self.assertGreaterEqual(wins, self.minwins)
 
 @turbo(n = np.uint32, acc = np.uint32)
 def triple(n):
