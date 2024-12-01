@@ -22,7 +22,7 @@ name = pyrbo
 pydoc_enabled = false
 pypi account = combatopera
 pyversions += 3
-requires += diapyr>=31
+requires += diapyr>=18
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
 test requires +=
     Cython
