@@ -43,7 +43,7 @@ class TestInfer(TestCase):
         self.assertEqual([1, 3, 5, 7, 9, 5, 6, 7, 8, 9], list(y))
 
     def test_works2(self):
-        self.assertEqual(11, add(5, 6))
+        self.assertEqual(11, add(np.int32(5), np.int32(6)))
 
     def test_failure(self):
         x = np.arange(10, dtype = np.int32)
