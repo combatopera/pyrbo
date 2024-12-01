@@ -21,11 +21,11 @@ import sys
 
 k = None
 
-@turbo(types = dict(i = int, k = X), groupsets = {X: [range(5, 10)]})
+@turbo(types = dict(i = np.int32, k = X), groupsets = {X: [range(5, 10)]})
 def f(i):
     return i + k
 
-@turbo(types = dict(i = int, k = X), groupsets = {X: [[int, float]]})
+@turbo(types = dict(i = np.int32, k = X), groupsets = {X: [[np.int32, float]]})
 def g(i, k):
     return i + k
 
