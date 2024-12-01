@@ -25,7 +25,7 @@ internal_module +=
 name = pyrbo
 pypi account = combatopera
 pyversions += 3
-requires += diapyr>=18
+requires += diapyr>=26
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
 test requires +=
     Cython>=3
