@@ -23,7 +23,7 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 if pyximport is None:
-    log.info('JIT unavailable.')
+    log.info('JIT unavailable, Cython required.')
 else:
     log.info('Install JIT.')
     pyximport.install(inplace = True, build_in_temp = False) # Note -O3 is apparently the default.
