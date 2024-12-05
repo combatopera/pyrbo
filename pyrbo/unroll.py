@@ -20,8 +20,9 @@ import re
 
 pattern = re.compile(r'^(\s*)for\s+UNROLL\s+in\s+range\s*\(\s*([^\s]+)\s*\)\s*:\s*$')
 indentregex = re.compile(r'^\s*')
+maxchunk = 0x80
 
-def unroll(body, g, consts, eol, maxchunk = 0x80):
+def unroll(body, g, consts, eol):
     f = StringIO(body)
     buffer = []
     while True:
