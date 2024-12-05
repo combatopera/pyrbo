@@ -15,14 +15,23 @@
 # You should have received a copy of the GNU General Public License
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
-from .leaf import turbo
+from .leaf import turbo, X
 from unittest import TestCase
 import numpy as np
+
+n = None
 
 @turbo(n = np.uint32, acc = np.uint32, i = np.uint32)
 def triple(n):
     acc = 0
     for UNROLL, i in range(n):
+        acc += 3
+    return acc * 1000 + n
+
+@turbo(n = X, acc = np.uint32)
+def triple_const():
+    acc = 0
+    for UNROLL in range(n):
         acc += 3
     return acc * 1000 + n
 
@@ -33,3 +42,6 @@ class TestUnroll(TestCase):
         self.assertEqual(381_127, triple(0x80 - 1))
         self.assertEqual(384_128, triple(0x80))
         self.assertEqual(387_129, triple(0x80 + 1))
+
+    def test_const(self):
+        self.assertEqual(300_100, triple_const[X, 100]())
