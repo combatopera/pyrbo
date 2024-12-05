@@ -45,10 +45,12 @@ def unroll(body, g, consts, eol):
             line = f.readline()
         buffer.append(line)
         if unvariable in consts:
+            assert variable is None
             for _ in range(consts[unvariable]):
                 for line in body:
                     g.append(f"{outerindent}{line[len(innerindent):]}")
         else:
+            assert variable is not None
             g.append(f"{outerindent}{variable} = {unvariable}{eol}")
             mask = 0x01
             while mask < maxchunk:
