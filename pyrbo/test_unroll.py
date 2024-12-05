@@ -30,3 +30,6 @@ class TestUnroll(TestCase):
 
     def test_unroll(self):
         self.assertEqual(21, triple(7))
+        self.assertEqual(381, triple(0x80 - 1))
+        self.assertEqual(384, triple(0x80))
+        self.assertEqual(387, triple(0x80 + 1))
