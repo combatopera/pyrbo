@@ -20,9 +20,8 @@ import re
 
 pattern = re.compile(r'^(\s*)for\s+UNROLL\s+in\s+range\s*\(\s*([^\s]+)\s*\)\s*:\s*$')
 indentregex = re.compile(r'^\s*')
-maxchunk = 0x80
 
-def unroll(body, g, consts, eol):
+def unroll(body, g, consts, eol, maxchunk = 0x80):
     f = StringIO(body)
     buffer = []
     while True:
@@ -50,13 +49,13 @@ def unroll(body, g, consts, eol):
         else:
             mask = 0x01
             while mask < maxchunk:
-                g.append("%sif %s & 0x%x:%s" % (outerindent, variable, mask, eol))
+                g.append(f"{outerindent}if {variable} & {mask:#x}:{eol}")
                 for _ in range(mask):
                     for line in body:
                         g.append(line)
                 mask <<= 1
-            g.append("%swhile %s >= 0x%x:%s" % (outerindent, variable, maxchunk, eol))
+            g.append(f"{outerindent}while {variable} >= {maxchunk:#x}:{eol}")
             for _ in range(maxchunk):
                 for line in body:
                     g.append(line)
-            g.append("%s%s -= 0x%x%s" % (innerindent, variable, maxchunk, eol))
+            g.append(f"{innerindent}{variable} -= {maxchunk:#x}{eol}")
