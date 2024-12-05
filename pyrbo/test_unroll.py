@@ -28,6 +28,13 @@ def triple(n):
         acc += 3
     return acc * 1000 + n
 
+@turbo(n = np.uint32, acc = np.uint32)
+def triple_clobber(n):
+    acc = 0
+    for UNROLL, CLOBBER in range(n):
+        acc += 3
+    return acc * 1000 + n
+
 @turbo(n = X, acc = np.uint32)
 def triple_const():
     acc = 0
@@ -42,6 +49,12 @@ class TestUnroll(TestCase):
         self.assertEqual(381_127, triple(0x80 - 1))
         self.assertEqual(384_128, triple(0x80))
         self.assertEqual(387_129, triple(0x80 + 1))
+
+    def test_clobber(self):
+        self.assertEqual(21_007, triple_clobber(7))
+        self.assertEqual(381_127, triple_clobber(0x80 - 1))
+        self.assertEqual(384_000, triple_clobber(0x80))
+        self.assertEqual(387_001, triple_clobber(0x80 + 1))
 
     def test_const(self):
         self.assertEqual(300_100, triple_const[X, 100]())

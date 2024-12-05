@@ -21,6 +21,7 @@ import re
 pattern = re.compile(r'^(\s*)for\s+UNROLL(?:\s*,\s*(\S+))?\s+in\s+range\s*\(\s*(\S+)\s*\)\s*:\s*$')
 indentregex = re.compile(r'^\s*')
 maxchunk = 0x80
+unroll_keywords = {'CLOBBER', 'UNROLL'}
 
 def unroll(body, g, consts, eol):
     f = StringIO(body)
@@ -51,7 +52,10 @@ def unroll(body, g, consts, eol):
                     g.append(f"{outerindent}{line[len(innerindent):]}")
         else:
             assert variable is not None
-            g.append(f"{outerindent}{variable} = {unvariable}{eol}")
+            if 'CLOBBER' == variable:
+                variable = unvariable
+            else:
+                g.append(f"{outerindent}{variable} = {unvariable}{eol}")
             mask = 0x01
             while mask < maxchunk:
                 g.append(f"{outerindent}if {variable} & {mask:#x}:{eol}")

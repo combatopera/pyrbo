@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
-from .unroll import unroll
+from .unroll import unroll, unroll_keywords
 from diapyr.util import innerclass, singleton
 from functools import total_ordering
 from importlib import import_module
@@ -325,7 +325,7 @@ def %(name)s(%(cparams)s):
         co_varnames = pyfunc.__code__.co_varnames # The params followed by the locals.
         co_argcount = pyfunc.__code__.co_argcount
         self.paramnames = co_varnames[:co_argcount]
-        self.localnames = [n for n in co_varnames[co_argcount:] if 'UNROLL' != n]
+        self.localnames = [n for n in co_varnames[co_argcount:] if n not in unroll_keywords]
         self.constnames = []
         allnames = set(chain(self.paramnames, self.localnames))
         for name, typespec in nametotypespec.items():
