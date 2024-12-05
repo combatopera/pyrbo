@@ -58,3 +58,4 @@ class TestUnroll(TestCase):
 
     def test_const(self):
         self.assertEqual(300_100, triple_const[X, 100]())
+        self.assertEqual(600_200, triple_const[X, 200]())
