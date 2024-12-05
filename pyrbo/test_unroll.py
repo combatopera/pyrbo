@@ -24,12 +24,12 @@ def triple(n):
     acc = 0
     for UNROLL in range(n):
         acc += 3
-    return acc
+    return acc * 1000 + n
 
 class TestUnroll(TestCase):
 
     def test_unroll(self):
-        self.assertEqual(21, triple(7))
-        self.assertEqual(381, triple(0x80 - 1))
-        self.assertEqual(384, triple(0x80))
-        self.assertEqual(387, triple(0x80 + 1))
+        self.assertEqual(21_007, triple(7))
+        self.assertEqual(381_127, triple(0x80 - 1))
+        self.assertEqual(384_128, triple(0x80))
+        self.assertEqual(387_129, triple(0x80 + 1))
