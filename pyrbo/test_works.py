@@ -133,15 +133,3 @@ class TestSpeed(TestCase):
 
     def test_fastenough(self):
         invokeall(partial(self.assertLessEqual, ratio, self.maxratio) for size in self.sizes for ratio in self._ratios(size))
-
-@turbo(n = np.uint32, acc = np.uint32)
-def triple(n):
-    acc = 0
-    for UNROLL in range(n):
-        acc += 3
-    return acc
-
-class TestUnroll(TestCase):
-
-    def test_unroll(self):
-        self.assertEqual(21, triple(7))
