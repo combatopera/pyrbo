@@ -18,7 +18,7 @@
 from io import StringIO
 import re
 
-pattern = re.compile(r'^(\s*)for\s+UNROLL\s+in\s+range\s*\(\s*([^\s]+)\s*\)\s*:\s*$')
+pattern = re.compile(r'^(\s*)for\s+UNROLL(?:\s*,\s*(\S+))?\s+in\s+range\s*\(\s*(\S+)\s*\)\s*:\s*$')
 indentregex = re.compile(r'^\s*')
 maxchunk = 0x80
 
@@ -35,6 +35,7 @@ def unroll(body, g, consts, eol):
             continue
         outerindent = m.group(1)
         variable = m.group(2)
+        unvariable = m.group(3)
         line = f.readline()
         m = indentregex.search(line)
         innerindent = m.group()
@@ -43,11 +44,12 @@ def unroll(body, g, consts, eol):
             body.append(line)
             line = f.readline()
         buffer.append(line)
-        if variable in consts:
-            for _ in range(consts[variable]):
+        if unvariable in consts:
+            for _ in range(consts[unvariable]):
                 for line in body:
                     g.append(f"{outerindent}{line[len(innerindent):]}")
         else:
+            g.append(f"{outerindent}{variable} = {unvariable}{eol}")
             mask = 0x01
             while mask < maxchunk:
                 g.append(f"{outerindent}if {variable} & {mask:#x}:{eol}")

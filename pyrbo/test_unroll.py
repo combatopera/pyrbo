@@ -19,10 +19,10 @@ from .leaf import turbo
 from unittest import TestCase
 import numpy as np
 
-@turbo(n = np.uint32, acc = np.uint32)
+@turbo(n = np.uint32, acc = np.uint32, i = np.uint32)
 def triple(n):
     acc = 0
-    for UNROLL in range(n):
+    for UNROLL, i in range(n):
         acc += 3
     return acc * 1000 + n
 
