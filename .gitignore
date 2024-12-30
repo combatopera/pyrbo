@@ -5,6 +5,5 @@
 pyrbo.egg-info/*
 !pyrbo.egg-info/PKG-INFO
 !pyrbo.egg-info/requires.txt
-/setup.cfg
 /setup.py
 /pyproject.toml
