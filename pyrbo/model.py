@@ -467,6 +467,19 @@ def partialorcomplete(decorated, variant):
     else:
         return decorated.getcomplete(variant)
 
+def _readslice(s):
+    param = s.start
+    arg = s.stop
+    assert s.step is None
+    return param, arg
+
+def paramargpairs(key):
+    try:
+        yield _readslice(key)
+    except AttributeError:
+        for s in key:
+            yield _readslice(s)
+
 class Partial:
 
     def __init__(self, decorated, variant):
@@ -476,10 +489,11 @@ class Partial:
     def todynamic(self):
         return Partial(self.decorated, self.variant, True)
 
-    def __getitem__(self, paramandarg):
-        param, arg = paramandarg
-        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
-        return partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
+    def __getitem__(self, key):
+        for param, arg in paramargpairs(key):
+            arg = Type(arg) if isinstance(arg, type) else Obj(arg)
+            self = partialorcomplete(self.decorated, self.variant.spinoff(self.decorated, param, arg))
+        return self
 
     def __call__(self, *args, **kwargs):
         return self.decorated.getcomplete(self.variant.complete(self.decorated, args))(*args, **kwargs)
@@ -500,14 +514,12 @@ class InstancePartial:
     def __call__(self, *args, **kwargs):
         return self.decorated.getcomplete(self.variant.complete(self.decorated, (self.instance,) + args))(self.instance, *args, **kwargs)
 
-    def __getitem__(self, paramandarg):
-        param, arg = paramandarg
-        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
-        variant = self.variant.spinoff(self.decorated, param, arg)
-        if variant.unbound:
-            return InstancePartial(self.instance, self.decorated, variant)
-        else:
-            return InstanceComplete(self.instance, self.decorated.getcomplete(variant))
+    def __getitem__(self, key):
+        for param, arg in paramargpairs(key):
+            arg = Type(arg) if isinstance(arg, type) else Obj(arg)
+            variant = self.variant.spinoff(self.decorated, param, arg)
+            self = InstancePartial(self.instance, self.decorated, variant) if variant.unbound else InstanceComplete(self.instance, self.decorated.getcomplete(variant))
+        return self
 
 class Decorator:
 

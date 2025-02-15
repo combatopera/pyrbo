@@ -16,7 +16,7 @@
 # along with pyrbo.  If not, see <http://www.gnu.org/licenses/>.
 
 from .common import AlreadyBoundException, NoSuchPlaceholderException
-from .model import Decorator, Obj, Partial, Placeholder, Type
+from .model import Decorator, Obj, paramargpairs, Partial, Placeholder, Type
 
 globals().update([p.name, p] for p in (Placeholder(chr(i)) for i in range(ord('T'), ord('Z') + 1)))
 LOCAL = None
@@ -58,20 +58,21 @@ class ClassVariant:
 
 class basegeneric(type):
 
-    def __getitem__(cls, paramandarg):
-        param, arg = paramandarg
-        arg = Type(arg) if isinstance(arg, type) else Obj(arg)
-        variant = cls.turbo_variant.spinoff(param, arg)
-        members = {}
-        for name, member in cls.__dict__.items():
-            if isinstance(member, Partial) and param in member.variant.unbound:
-                member = member[param, arg.unwrap()]
-            members[name] = member
-        members['turbo_variant'] = variant
-        words = [variant.basename]
-        for param in sorted(variant.placeholders):
-            words.append(variant.paramtoarg[param].discriminator() if param in variant.paramtoarg else '?')
-        return basegeneric('_'.join(words), cls.__bases__, members)
+    def __getitem__(cls, key):
+        for param, arg in paramargpairs(key):
+            arg = Type(arg) if isinstance(arg, type) else Obj(arg)
+            variant = cls.turbo_variant.spinoff(param, arg)
+            members = {}
+            for name, member in cls.__dict__.items():
+                if isinstance(member, Partial) and param in member.variant.unbound:
+                    member = member[param:arg.unwrap()]
+                members[name] = member
+            members['turbo_variant'] = variant
+            words = [variant.basename]
+            for param in sorted(variant.placeholders):
+                words.append(variant.paramtoarg[param].discriminator() if param in variant.paramtoarg else '?')
+            cls = basegeneric('_'.join(words), cls.__bases__, members)
+        return cls
 
 class generic(basegeneric):
 

@@ -59,7 +59,7 @@ class TestTurbo(TestCase):
         y = np.arange(n, dtype = np.float32) * 2
         expected = np.empty(n, dtype = np.float32)
         pysum(n, x, y, expected)
-        for task in npsum, tsum, gsum[T, np.float32], gsum, Cls().oogsum, Cls().oogsum[T, np.float32]:
+        for task in npsum, tsum, gsum[T:np.float32], gsum, Cls().oogsum, Cls().oogsum[T:np.float32]:
             actual = np.empty(n, dtype = np.float32)
             task(n, x, y, actual)
             self.assertTrue(np.array_equal(expected, actual))
@@ -119,7 +119,7 @@ class TestSpeed(TestCase):
     sizes = [10 ** exp for exp in range(8) if exp not in {4, 5}]
     maxratio = 1
     reftask = Task(npsum)
-    tasks = list(map(Task, [tsum, gsum[T, np.float32]]))
+    tasks = list(map(Task, [tsum, gsum[T:np.float32]]))
 
     def _ratios(self, size):
         x = np.arange(size, dtype = np.float32)

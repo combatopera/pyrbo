@@ -93,22 +93,22 @@ class TestBuf(TestCase):
     def test_works(self):
         t = np.uint16
         u = np.int32
-        tbuf = Buf[T, t]
-        ubuf = Buf[U, u]
+        tbuf = Buf[T:t]
+        ubuf = Buf[U:u]
         names = ['Buf', 'Buf_uint16_?', 'Buf_?_int32', 'Buf_uint16_int32', 'Buf_uint16_int32']
-        for bufcls in Buf, tbuf, ubuf, tbuf[U, u], ubuf[T, t]:
+        for bufcls in Buf, tbuf, ubuf, tbuf[U:u], ubuf[T:t]:
             self.assertEqual(names.pop(0), bufcls.__name__)
             v = np.zeros(10, dtype = t)
             buf = bufcls(v)
             buf.fillpart(4, 6, np.int32(5))
             self.assertEqual([0, 0, 0, 0, 5, 5, 0, 0, 0, 0], list(v))
         try:
-            Buf[Z, None]
+            Buf[Z:None]
             self.fail('Expected no such placeholder.')
         except NoSuchPlaceholderException as e:
             self.assertEqual((Z,), e.args)
         try:
-            tbuf[T, TestBuf]
+            tbuf[T:TestBuf]
             self.fail('Expected already bound.')
         except AlreadyBoundException as e:
             self.assertEqual((T, t, TestBuf), e.args)

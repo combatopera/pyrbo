@@ -35,7 +35,7 @@ class TestExact(TestCase):
             np.float32, np.float64)
         for t in dtypes:
             for u in dtypes:
-                g = f[T, t]
+                g = f[T:t]
                 v = np.empty(10, dtype = u)
                 if t == u:
                     g(v)
@@ -45,6 +45,6 @@ class TestExact(TestCase):
                         self.fail('Expected value error.')
                     except ValueError:
                         pass
-                g2 = f2[T, t]
+                g2 = f2[T:t]
                 x = u(10)
                 g2(x) # All conversions allowed, including narrowing.

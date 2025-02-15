@@ -33,11 +33,12 @@ def arrayof(v):
 class TestValueArg(TestCase):
 
     def test_works(self):
-        self.assertEqual((-5, 6), turbotuple[T, np.int32][Y, 6](-5))
+        self.assertEqual((-5, 6), turbotuple[T:np.int32][Y:6](-5))
+        self.assertEqual((-5, 6), turbotuple[T:np.int32, Y:6](-5))
 
     def test_arrayof(self):
         try:
-            arrayof[X, 100]
+            arrayof[X:100]
             self.fail("Expected bad arg.")
         except BadArgException as e:
             self.assertEqual((100,), e.args)

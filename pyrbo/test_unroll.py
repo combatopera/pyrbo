@@ -57,5 +57,5 @@ class TestUnroll(TestCase):
         self.assertEqual(387_001, triple_clobber(0x80 + 1))
 
     def test_const(self):
-        self.assertEqual(300_100, triple_const[X, 100]())
-        self.assertEqual(600_200, triple_const[X, 200]())
+        self.assertEqual(300_100, triple_const[X:100]())
+        self.assertEqual(600_200, triple_const[X:200]())
