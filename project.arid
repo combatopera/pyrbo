@@ -17,7 +17,6 @@
 
 author = Andrzej Cichocki
 author_email = 3613868+combatopera@users.noreply.github.com
-build requires += Cython==$(cython_build_version)
 buildbot enabled = true
 github account = combatopera
 internal_module +=
