@@ -1,5 +1,5 @@
 # pyrbo
-Python JIT compiler for near-native performance of low-level arithmetic
+Python JIT compiler for near-native performance of low-level arithmetic.
 
 ## Install
 These are generic installation instructions.
