@@ -27,7 +27,7 @@ name = pyrbo
 pypi account = combatopera
 requires +=
     diapyr>=26
-    foyndation>=10
+    foyndation>=11
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
 test requires +=
     Cython==$(cython_build_version)

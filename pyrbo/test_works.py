@@ -17,7 +17,7 @@
 
 from .leaf import turbo, T
 from .model import Deferred, nocompile
-from diapyr.util import invokeall
+from foyndation import invokeall
 from functools import partial
 from statistics import median
 from unittest import TestCase

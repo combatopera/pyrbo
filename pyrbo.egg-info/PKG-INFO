@@ -8,7 +8,7 @@ Author-email: 3613868+combatopera@users.noreply.github.com
 Description-Content-Type: text/markdown
 License-File: COPYING
 Requires-Dist: diapyr>=26
-Requires-Dist: foyndation>=10
+Requires-Dist: foyndation>=11
 
 # pyrbo
 Python JIT compiler for near-native performance of low-level arithmetic.
