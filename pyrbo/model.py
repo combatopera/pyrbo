@@ -17,8 +17,7 @@
 
 from .common import AlreadyBoundException, BadArgException, NoSuchPlaceholderException, NoSuchVariableException, NotDynamicException
 from .unroll import unroll, unroll_keywords
-from diapyr.util import innerclass
-from foyndation import singleton
+from foyndation import innerclass, singleton
 from functools import total_ordering
 from importlib import import_module
 from itertools import chain, product
