@@ -88,7 +88,7 @@ class TestDeferred(TestCase):
             self.assertEqual(type(self), d.f)
 
     def test_nocompile(self):
-        d = Deferred("%s.test_data.dnocompile" % __package__, 'dummy')
+        d = Deferred(f"{__spec__.parent}.test_data.dnocompile", 'dummy')
         with nocompile, self.assertRaises(AssertionError):
             d.f
         from .test_data import dnocompile
