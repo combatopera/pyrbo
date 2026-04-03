@@ -29,6 +29,7 @@ threadstate = threading.local()
 
 @singleton
 class nocompile:
+    'Generate Cython source without compiling it e.g. in preparation for making wheels.'
 
     def depth(self):
         return getattr(threadstate, 'compiledisabled', 0)

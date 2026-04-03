@@ -57,3 +57,14 @@ The `types` kwarg is a dict of local variables (including params) to their numpy
 
 ### pyrbo.model
 
+<a id="pyrbo.model.nocompile"></a>
+
+#### nocompile Objects
+
+```python
+@singleton
+class nocompile()
+```
+
+Generate Cython source without compiling it e.g. in preparation for making wheels.
+
