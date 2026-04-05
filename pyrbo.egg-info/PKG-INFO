@@ -1,6 +1,6 @@
 Metadata-Version: 2.2
 Name: pyrbo
-Version: 23.dev0
+Version: 24.dev0
 Summary: Python JIT compiler for near-native performance of low-level arithmetic
 Home-page: https://github.com/combatopera/pyrbo
 Author: Andrzej Cichocki
