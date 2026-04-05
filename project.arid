@@ -30,7 +30,7 @@ requires += foyndation>=12
 tagline = Python JIT compiler for near-native performance of low-level arithmetic
 test requires +=
     Cython==$(cython_build_version)
-    numpy==$(numpy_build_version)
+    $(numpy lower_bound)
 years +=
     2015
     2016
